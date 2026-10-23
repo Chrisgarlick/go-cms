@@ -74,6 +74,9 @@ jobs:
         with:
           pattern: migrations/*.sql
           version: latest
+          # No PR comment (it needs a write token, and in comment mode the
+          # action doesn't fail on violations): plain pass/fail everywhere.
+          upload-to-github: false
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with: { go-version-file: go.mod }
       - name: N-1 compatibility (previous release's tests on this schema)
