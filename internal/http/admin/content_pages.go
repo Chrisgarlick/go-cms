@@ -285,9 +285,7 @@ func (h *Handler) editor(w http.ResponseWriter, r *http.Request) {
 			d.Media[id.String()] = toMediaJSON(v)
 		}
 	}
-	for _, name := range h.templateChoices(ct.Name) {
-		d.Templates = append(d.Templates, name)
-	}
+	d.Templates = append(d.Templates, h.templateChoices(ct.Name)...)
 	p := h.page(r, firstNonEmpty(e.DraftTitle, "Untitled"), "editor", d)
 	h.render(w, r, "editor", http.StatusOK, p)
 }

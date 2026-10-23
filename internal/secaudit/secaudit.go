@@ -326,7 +326,7 @@ func (a *Auditor) vulnChecks(ctx context.Context) ([]Finding, error) {
 func (a *Auditor) vulnDetail(ctx context.Context, id string) (*osvVuln, error) {
 	b, code, err := netx.Get(ctx, a.Client, "https://api.osv.dev/v1/vulns/"+id, 2<<20)
 	if err != nil || code != 200 {
-		return nil, fmt.Errorf("osv detail: %v %d", err, code)
+		return nil, fmt.Errorf("osv detail: %w %d", err, code)
 	}
 	var v osvVuln
 	return &v, json.Unmarshal(b, &v)

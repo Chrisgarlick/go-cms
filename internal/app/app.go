@@ -253,7 +253,7 @@ func (a *App) Background(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				fctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				fctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 				_ = a.Redirects.Flush(fctx)
 				_ = a.Auth.FlushTokenUse(fctx)
 				cancel()

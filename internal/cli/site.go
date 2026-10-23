@@ -116,7 +116,7 @@ func prompt(q, def string) string {
 }
 
 func run(dir, name string, args ...string) error {
-	c := exec.Command(name, args...)
+	c := exec.Command(name, args...) //nolint:noctx // short interactive git/gh calls
 	c.Dir = dir
 	c.Stdout, c.Stderr = os.Stderr, os.Stderr
 	return c.Run()
@@ -297,7 +297,7 @@ func runDev(ctx context.Context, siteDir string, port int, reset bool) error {
 	if err := os.MkdirAll(state, 0o700); err != nil {
 		return err
 	}
-	if ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port)); err != nil {
+	if ln, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", fmt.Sprintf("127.0.0.1:%d", port)); err != nil {
 		return fmt.Errorf("port %d is in use (try --port)", port)
 	} else {
 		ln.Close()
@@ -308,7 +308,7 @@ func runDev(ctx context.Context, siteDir string, port int, reset bool) error {
 	if err != nil {
 		return err
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 	if err := cluster.EnsureDatabase(ctx, "cms"); err != nil {
 		return err
 	}

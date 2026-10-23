@@ -50,8 +50,8 @@ jobs:
       run:
         working-directory: ${{ inputs.path }}
     steps:
-      - uses: actions/checkout@v4
-        with: { ref: "${{ inputs.ref || github.sha }}" }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { ref: "${{ inputs.ref || github.sha }}", persist-credentials: false }
       - name: Check the inputs
         working-directory: .
         env:
@@ -76,7 +76,7 @@ jobs:
           gh release download "$tag" -R "$CMS_REPO" -p "cms_*_linux_amd64.tar.gz"
           tar -xzf cms_*_linux_amd64.tar.gz cms && sudo install cms /usr/local/bin/cms
           cms version
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.embedded-postgres-go
           key: embedded-postgres-${{ runner.os }}-18
@@ -91,9 +91,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with: { ref: "${{ inputs.ref || github.sha }}" }
-      - uses: sigstore/cosign-installer@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { ref: "${{ inputs.ref || github.sha }}", persist-credentials: false }
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
       - name: Build, checksum and sign the site bundle
         working-directory: ${{ inputs.path }}
         env:
@@ -115,7 +115,7 @@ jobs:
           else
             echo "::warning::COSIGN_PRIVATE_KEY is not set: the bundle is unsigned and servers will refuse it"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: bundle-${{ inputs.tag_prefix }}
           path: ${{ runner.temp }}/bundle/

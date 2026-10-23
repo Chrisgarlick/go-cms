@@ -13,19 +13,45 @@ linters:
     - unconvert
     - staticcheck
   settings:
+    errcheck:
+      # Writes to a response or terminal and closes on cleanup paths have
+      # nowhere useful to report a failure.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (io.Closer).Close
+        - (net.Conn).Close
+        - (net.Listener).Close
+        - (*os.File).Close
+        - (io/fs.File).Close
+        - (*github.com/jackc/pgx/v5.Conn).Close
+        - (*mime/multipart.Part).Close
+        - os.Remove
+        - (*database/sql.DB).Close
+        - (*net/smtp.Client).Close
+        - os.RemoveAll
+    staticcheck:
+      # The defaults, minus De Morgan rewrites: !(a || b) often reads closer
+      # to the rule it encodes.
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1001"]
     gosec:
       excludes:
         - G104 # unhandled errors on best-effort cleanup are intentional
         - G304 # file paths come from config, not users
         - G204 # subprocesses are fixed binaries (vips, pg_dump, cosign)
-    misspell:
-      locale: UK
+        - G124 # cookies set HttpOnly + SameSite; Secure follows config (off only for http://localhost dev)
+        - G203 # rendering trusted, sanitised HTML is the CMS's job (richtext sanitises; templates escape)
+        - G301 # rendered output and media are served by the web server, so world-readable
+        - G302
+        - G306
+        - G115 # int -> int32 conversions are SQL limits, HTTP statuses and image sizes, bounded upstream
   exclusions:
     paths:
       - internal/db/dbq
     rules:
       - path: _test\.go
-        linters: [gosec, noctx]
+        linters: [gosec, noctx, errcheck, bodyclose]
       - text: "fmt.Sprintf.*(SELECT|INSERT|UPDATE|DELETE)"
         linters: [gosec]
         path: internal/(db|devdb)/

@@ -2,6 +2,7 @@ package fields
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -24,8 +25,8 @@ func TestValidate(t *testing.T) {
 	in := `{"heading":" Hi ","count":"3","image":"0190f1b6-7a0b-7c00-8000-000000000001",
 		"cta":{"url":"javascript:x","label":"go"},"items":[{"q":""}],"raw":"<b>x</b>","dark_note":"x","junk":1}`
 	_, _, err := Validate(defs, json.RawMessage(in), Context{CanUse: func(string) bool { return false }})
-	errs, ok := err.(Errors)
-	if !ok {
+	var errs Errors
+	if !errors.As(err, &errs) {
 		t.Fatalf("expected Errors, got %v", err)
 	}
 	if errs["cta"] == "" || errs["items.0.q"] == "" {

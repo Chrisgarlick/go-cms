@@ -6,22 +6,24 @@ on:
     - cron: "30 2 * * *"
   workflow_dispatch:
 permissions:
-  contents: write
-  issues: write
+  contents: read
 
 jobs:
   scan:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write # opens an issue when the latest release is affected
     strategy:
       matrix:
         ref: [main, latest-release]
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Check out the latest release tag
         if: matrix.ref == 'latest-release'
         run: git checkout "$(git describe --tags --abbrev=0)"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with: { go-version-file: go.mod }
       - name: govulncheck
         id: vuln
@@ -37,16 +39,20 @@ jobs:
   fuzz:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with: { go-version-file: go.mod }
       - run: go test ./internal/richtext -run '^$' -fuzz FuzzRender -fuzztime 10m
 
   promote:
     name: Promote releases through the rings
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write # edits release notes (the channel marker)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
       - name: edge -> canary after 24 h healthy on staging; canary -> stable after 72 h on your own site
         env:
           GH_TOKEN: ${{ github.token }}

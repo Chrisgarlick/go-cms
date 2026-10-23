@@ -11,6 +11,8 @@ CREATE TABLE form_submissions (
     created_at timestamptz NOT NULL DEFAULT now(),
     read_at    timestamptz
 );
+-- The table is new and empty, so a plain index build blocks nothing.
+-- squawk-ignore require-concurrent-index-creation
 CREATE INDEX form_submissions_form_created_idx ON form_submissions (form, created_at DESC);
 
 -- +goose Down

@@ -215,7 +215,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	case "oldest", "title", "menu_order":
 		sort = q.Get("sort")
 	}
-	params := dbq.PublishedListParams{Type: typ, Locale: h.a.Site().Config.Locale, Sort: sort, Lim: int32(limit), Off: int32(offset)}
+	params := dbq.PublishedListParams{Type: typ, Locale: h.a.Site().Config.Locale, Sort: sort, Lim: int32(limit), Off: int32(offset)} //nolint:gosec // limit <= 100, offset <= 100000
 	if tax, slug := q.Get("taxonomy"), q.Get("term"); tax != "" && slug != "" {
 		t, err := h.a.DB.Q.GetTermBySlug(r.Context(), dbq.GetTermBySlugParams{Taxonomy: tax, Slug: slug})
 		if err != nil {

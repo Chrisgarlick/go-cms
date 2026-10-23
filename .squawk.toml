@@ -1,0 +1,13 @@
+# Migration lint (spec 9.2). Squawk can't tell a goose Up section from a Down
+# one, or a brand-new table from a live one, so these rules are off:
+excluded_rules = [
+  "prefer-robust-stmts",       # goose runs each file in one transaction
+  "prefer-bigint-over-int",    # int columns are bounded counts and statuses
+  "require-lock-timeout",      # migrations run at deploy, before the new binary takes traffic
+  "require-statement-timeout",
+  "ban-drop-table",            # drops only appear in "+goose Down"; Up drops are
+  "ban-drop-column",           # contract migrations, gated by the N-1 check
+  "ban-drop-function",
+]
+# The bootstrap schema: every table is created empty in the same file.
+excluded_paths = ["migrations/00001_initial.sql"]

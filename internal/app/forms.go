@@ -83,13 +83,13 @@ func (a *App) formSubmit(w http.ResponseWriter, r *http.Request) {
 	// Without JavaScript: back to the page the form was on.
 	back := "/"
 	if ref, err := url.Parse(r.Referer()); err == nil && ref.Path != "" && (ref.Host == "" || ref.Host == r.Host) {
-		back = ref.Path
+		back = web.LocalPath(ref.Path)
 	}
 	result := "sent"
 	if status != http.StatusOK {
 		result = "error"
 	}
-	http.Redirect(w, r, back+"?form="+url.QueryEscape(name)+"&result="+result+"#"+name, http.StatusSeeOther)
+	http.Redirect(w, r, back+"?form="+url.QueryEscape(name)+"&result="+result+"#"+name, http.StatusSeeOther) //nolint:gosec // back is a local path
 }
 
 // coerce turns posted strings into the types the field definitions expect.

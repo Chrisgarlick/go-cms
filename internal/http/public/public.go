@@ -103,10 +103,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if slash {
 				target = p + "/"
 			}
+			target = web.LocalPath(target)
 			if r.URL.RawQuery != "" {
 				target += "?" + r.URL.RawQuery
 			}
-			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			http.Redirect(w, r, target, http.StatusMovedPermanently) //nolint:gosec // a local path
 			return
 		}
 		if !slash {
@@ -177,7 +178,7 @@ func (h *Handler) write(w http.ResponseWriter, r *http.Request, res *render.Resu
 	w.Header().Set("Content-Length", strconv.Itoa(len(res.Body)))
 	w.WriteHeader(res.Status)
 	if r.Method != http.MethodHead {
-		_, _ = w.Write(res.Body)
+		_, _ = w.Write(res.Body) //nolint:gosec // rendered page, escaped by the templates
 	}
 }
 
@@ -207,7 +208,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p string) bo
 	if err != nil {
 		return false
 	}
-	st, err := os.Stat(f)
+	st, err := os.Stat(f) //nolint:gosec // path confined to the output/media root above
 	if err != nil || !st.Mode().IsRegular() {
 		return false
 	}
@@ -219,7 +220,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p string) bo
 	case strings.Contains(ae, "gzip") && exists(f+".gz"):
 		name, enc = f+".gz", "gzip"
 	}
-	data, err := os.ReadFile(name)
+	data, err := os.ReadFile(name) //nolint:gosec // path confined to the output/media root above
 	if err != nil {
 		return false
 	}
@@ -237,7 +238,7 @@ func (h *Handler) serveFile(w http.ResponseWriter, r *http.Request, p string) bo
 	return true
 }
 
-func exists(p string) bool { _, err := os.Stat(p); return err == nil }
+func exists(p string) bool { _, err := os.Stat(p); return err == nil } //nolint:gosec // path confined to the output/media root above
 
 // asset serves fingerprinted theme assets (immutable).
 func (h *Handler) asset(w http.ResponseWriter, r *http.Request) {
@@ -263,7 +264,7 @@ func (h *Handler) media(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := filepath.Join(h.MediaDir, filepath.FromSlash(rel))
-	st, err := os.Stat(f)
+	st, err := os.Stat(f) //nolint:gosec // path confined to the output/media root above
 	if err != nil || !st.Mode().IsRegular() {
 		h.notFound(w, r)
 		return
@@ -277,12 +278,12 @@ func (h *Handler) media(w http.ResponseWriter, r *http.Request) {
 			hd.Set("Content-Disposition", "attachment")
 		}
 	}
-	http.ServeFile(w, r, f)
+	http.ServeFile(w, r, f) //nolint:gosec // path confined to the output/media root above
 }
 
 func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/search" {
-		http.Redirect(w, r, "/search/?"+r.URL.RawQuery, http.StatusMovedPermanently)
+		http.Redirect(w, r, "/search/?"+r.URL.RawQuery, http.StatusMovedPermanently) //nolint:gosec // fixed path
 		return
 	}
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))

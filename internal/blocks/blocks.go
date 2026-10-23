@@ -7,6 +7,7 @@ import (
 	"embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path"
@@ -130,7 +131,7 @@ func validateList(b *site.Bundle, ct *site.ContentType, in []Block, parent *site
 		seen[bl.ID] = true
 		data, refs, err := fields.Validate(def.Fields, bl.Data, c)
 		if err != nil {
-			if fe, ok := err.(fields.Errors); ok {
+			if fe := (fields.Errors)(nil); errors.As(err, &fe) {
 				for k, v := range fe {
 					errs[p+".data."+k] = v
 				}

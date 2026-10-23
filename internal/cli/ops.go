@@ -200,7 +200,7 @@ func runDoctor(ctx context.Context, fix bool) []check {
 		add("image processing", "warn", "libvips not found: using the built-in processor (JPEG/PNG only); apt install libvips-tools")
 	}
 	if pd, err := exec.LookPath("pg_dump"); err == nil {
-		outb, _ := exec.Command(pd, "--version").Output()
+		outb, _ := exec.CommandContext(ctx, pd, "--version").Output()
 		add("pg_dump", "ok", strings.TrimSpace(string(outb)))
 	} else {
 		add("pg_dump", "warn", "not installed: cms backup needs postgresql-client")
@@ -366,7 +366,7 @@ func tarDir(src, dst string) error {
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
 		}
-		in, err := os.Open(p)
+		in, err := os.Open(p) //nolint:gosec // backing up an operator-owned directory
 		if err != nil {
 			return err
 		}

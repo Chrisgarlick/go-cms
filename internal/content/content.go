@@ -276,7 +276,7 @@ func (s *Service) clean(ctx context.Context, q *dbq.Queries, a *actor.Actor, ct 
 	if refs == nil {
 		refs = &fields.Refs{Media: map[string]string{}}
 	}
-	var blocksJSON json.RawMessage = json.RawMessage("[]")
+	blocksJSON := json.RawMessage("[]")
 	var blockText []string
 	uncached := false
 	if ct.Has("blocks") {

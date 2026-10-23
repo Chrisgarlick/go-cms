@@ -30,10 +30,6 @@ type Event struct {
 	ID    string `json:"id,omitempty"`
 }
 
-type execer interface {
-	Exec(ctx context.Context, sql string, args ...any) (any, error)
-}
-
 // Notify sends an event; with a tx it is delivered on commit.
 func Notify(ctx context.Context, tx pgx.Tx, e Event) error {
 	b, _ := json.Marshal(e)
