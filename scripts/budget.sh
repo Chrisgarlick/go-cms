@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Memory and latency budgets (spec 8.2). Fails the build on regression.
 set -euo pipefail
-BIN=${BIN:-./bin/cms}
+BIN=$(realpath "${BIN:-./bin/cms}")
 PORT=${PORT:-18090}
 P95_MS=${P95_MS:-20}
 RSS_MB=${RSS_MB:-128}
