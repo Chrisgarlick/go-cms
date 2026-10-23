@@ -199,7 +199,7 @@ func toInt(v any) int {
 		return int(t)
 	case string:
 		var n int
-		fmt.Sscanf(t, "%d", &n)
+		_, _ = fmt.Sscanf(t, "%d", &n)
 		return n
 	}
 	return 0

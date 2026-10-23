@@ -6,11 +6,17 @@ on:
       tag: { description: "Release tag, e.g. v1.4.2", required: true }
       channel: { description: "edge, canary or stable", required: true, default: stable }
 permissions:
-  contents: write
+  contents: read
 jobs:
   promote:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write # edits release notes (the channel marker)
     steps:
-      - uses: actions/checkout@v4
-      - env: { GH_TOKEN: "${{ github.token }}" }
-        run: ./scripts/promote.sh --tag "${{ inputs.tag }}" --channel "${{ inputs.channel }}"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          CHANNEL: ${{ inputs.channel }}
+        run: ./scripts/promote.sh --tag "$TAG" --channel "$CHANNEL"

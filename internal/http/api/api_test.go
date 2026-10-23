@@ -50,7 +50,7 @@ func TestReadAPI(t *testing.T) {
 	if st != 200 || !strings.Contains(d["html"].(string), "<h2") || d["url"] != "/blog/why-this-site-is-fast/" {
 		t.Fatalf("get: %d %v", st, m)
 	}
-	st, m = get("/api/v1/content/post?fields=title")
+	_, m = get("/api/v1/content/post?fields=title")
 	first := m["data"].([]any)[0].(map[string]any)
 	if _, ok := first["excerpt"]; ok || first["title"] == nil {
 		t.Fatalf("fields filter: %v", first)

@@ -59,7 +59,7 @@ func runCheck(ctx context.Context, siteDir string) error {
 	if err != nil {
 		return err
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 	if err := cluster.EnsureDatabase(ctx, "cms"); err != nil {
 		return err
 	}

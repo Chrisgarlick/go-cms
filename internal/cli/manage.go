@@ -809,7 +809,7 @@ func redirectsCmd() *cobra.Command {
 			}
 			in := redirects.Input{Source: r[0], Target: r[1], Status: 301, MatchType: "exact", PreserveQuery: true}
 			if len(r) > 2 {
-				fmt.Sscan(r[2], &in.Status)
+				_, _ = fmt.Sscan(r[2], &in.Status)
 			}
 			if len(r) > 3 {
 				in.MatchType = r[3]

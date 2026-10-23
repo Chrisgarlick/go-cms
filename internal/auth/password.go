@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // the Pwned Passwords range API is keyed by SHA-1
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
@@ -120,7 +120,7 @@ var commonPasswords = []string{
 // using k-anonymity: only the first 5 hex characters of its SHA-1 leave the
 // server. client must be the hardened outbound client.
 func Breached(ctx context.Context, client *http.Client, pw string) (bool, error) {
-	sum := sha1.Sum([]byte(pw))
+	sum := sha1.Sum([]byte(pw)) //nolint:gosec // the Pwned Passwords range API is keyed by SHA-1
 	h := strings.ToUpper(hex.EncodeToString(sum[:]))
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

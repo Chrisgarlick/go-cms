@@ -505,9 +505,10 @@ func (p *Page) Menu(name string) []*MenuItem {
 	collect = func(items []menus.Item) {
 		for _, it := range items {
 			if id, err := uuid.Parse(it.Ref); err == nil {
-				if it.Type == "entry" {
+				switch it.Type {
+				case "entry":
 					entryIDs = append(entryIDs, id)
-				} else if it.Type == "term" {
+				case "term":
 					termIDs = append(termIDs, id)
 				}
 			}

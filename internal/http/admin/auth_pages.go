@@ -16,7 +16,7 @@ import (
 
 func (h *Handler) loginPage(w http.ResponseWriter, r *http.Request) {
 	if s := sessionFrom(r.Context()); s != nil && s.Stage == auth.StageFull {
-		http.Redirect(w, r, safeNext(r.URL.Query().Get("next")), http.StatusSeeOther)
+		http.Redirect(w, r, safeNext(r.URL.Query().Get("next")), http.StatusSeeOther) //nolint:gosec // safeNext allows /admin/ paths only
 		return
 	}
 	p := h.page(r, "Sign in", "auth", map[string]string{"Next": safeNext(r.URL.Query().Get("next")), "Email": ""})

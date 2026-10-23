@@ -41,9 +41,9 @@ const Honeypot = "_hp"
 
 var (
 	ErrNoForm      = errors.New("forms: no such form")
-	ErrToken       = errors.New("This form has expired. Please reload the page and try again.")
-	ErrTooFast     = errors.New("That was quicker than a person can type. Please try again.")
-	ErrRateLimited = errors.New("Too many submissions. Please try again later.")
+	ErrToken       = errors.New("This form has expired. Please reload the page and try again.") //nolint:staticcheck // shown to visitors as-is
+	ErrTooFast     = errors.New("That was quicker than a person can type. Please try again.")   //nolint:staticcheck // shown to visitors as-is
+	ErrRateLimited = errors.New("Too many submissions. Please try again later.")                //nolint:staticcheck // shown to visitors as-is
 	ErrSpam        = errors.New("forms: honeypot filled")
 )
 

@@ -84,7 +84,7 @@ func (v *Vips) Run(ctx context.Context, j Job) (Result, error) {
 	cmd := exec.CommandContext(ctx, v.Binary, args...)
 	cmd.Env = []string{"VIPS_CONCURRENCY=1", "PATH=/usr/local/bin:/usr/bin:/bin"}
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return Result{}, fmt.Errorf("vips: %v: %s", err, bytes.TrimSpace(out))
+		return Result{}, fmt.Errorf("vips: %w: %s", err, bytes.TrimSpace(out))
 	}
 	f, err := os.Open(j.Dst)
 	if err != nil {
@@ -123,7 +123,7 @@ func (c *Child) Run(ctx context.Context, j Job) (Result, error) {
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
-		return Result{}, fmt.Errorf("media-process: %v: %s", err, strings.TrimSpace(errb.String()))
+		return Result{}, fmt.Errorf("media-process: %w: %s", err, strings.TrimSpace(errb.String()))
 	}
 	var r Result
 	if err := json.Unmarshal(out.Bytes(), &r); err != nil {

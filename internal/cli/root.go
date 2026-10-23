@@ -176,7 +176,7 @@ func confirm(prompt string) error {
 	}
 	fmt.Fprintf(os.Stderr, "%s [y/N] ", prompt)
 	var ans string
-	fmt.Scanln(&ans)
+	_, _ = fmt.Scanln(&ans)
 	if strings.ToLower(strings.TrimSpace(ans)) != "y" {
 		return errors.New("cancelled")
 	}

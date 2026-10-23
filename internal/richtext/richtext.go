@@ -56,7 +56,7 @@ func Parse(raw []byte) (*Node, error) {
 	}
 	var n Node
 	if err := json.Unmarshal(raw, &n); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalid, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 	if n.Type != "doc" {
 		return nil, fmt.Errorf("%w: root must be doc", ErrInvalid)

@@ -20,7 +20,7 @@ const (
 	superPass    = "postgres"
 	MigratorRole = "cms_migrator"
 	AppRole      = "cms_app"
-	devPassword  = "dev-only-password"
+	devPassword  = "dev-only-password" //nolint:gosec // local dev cluster only
 )
 
 type Cluster struct {
@@ -156,7 +156,7 @@ func quoteLiteral(s string) string {
 }
 
 func freePort() (uint32, error) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		return 0, err
 	}

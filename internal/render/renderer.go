@@ -140,7 +140,6 @@ type route struct {
 	term    *dbq.Term
 	entry   *dbq.PublishedBySlugRow
 	page    int
-	feed    bool
 	sitemap string // "" | "index" | type name | "taxonomies"
 }
 
