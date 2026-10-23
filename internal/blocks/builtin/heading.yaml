@@ -1,0 +1,7 @@
+name: heading
+label: Heading
+icon: heading
+category: text
+fields:
+  - { name: text, type: text, required: true, searchable: true }
+  - { name: level, type: select, options: ["2", "3", "4"], default: "2" }

@@ -1,0 +1,9 @@
+name: image
+label: Image
+icon: image
+category: media
+fields:
+  - { name: image, type: image, required: true }
+  - { name: caption, type: text, searchable: true }
+  - { name: size, type: select, options: [medium, large, full], default: large }
+  - { name: link, type: url }

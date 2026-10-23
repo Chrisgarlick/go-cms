@@ -1,0 +1,55 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}} · {{.Site}}</title>
+<link rel="stylesheet" href="/admin/assets/admin.css?v={{.Version}}">
+<link rel="icon" href="/admin/assets/favicon.svg">
+</head>
+{{if eq .Section "auth"}}
+<body class="auth">
+  <main class="auth-main">
+    <div class="auth-card">
+      <p class="auth-site">{{.Site}}</p>
+      {{template "flash" .}}
+      {{template "content" .}}
+    </div>
+    <p class="auth-foot">Protected by two-factor authentication</p>
+  </main>
+</body>
+{{else}}
+<body class="app section-{{.Section}}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="sidebar" aria-label="Admin navigation">
+    <div class="sidebar-head">
+      <a class="brand" href="/admin/"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">{{.Site}}</span></a>
+      <a class="view-site" href="{{.SiteURL}}/" target="_blank" rel="noopener">View site {{template "icon" "external"}}</a>
+    </div>
+    <nav class="nav">
+      <a class="nav-item{{if eq .Section "dashboard"}} is-active{{end}}" href="/admin/">{{template "icon" "home"}}<span>Dashboard</span></a>
+      {{range .Nav}}
+      <p class="nav-label">{{.Label}}</p>
+      {{range .Items}}<a class="nav-item{{if .Active}} is-active{{end}}" href="{{.URL}}"{{if .Active}} aria-current="page"{{end}}>{{template "icon" .Icon}}<span>{{.Label}}</span></a>{{end}}
+      {{end}}
+    </nav>
+    {{with .Session}}
+    <div class="sidebar-foot">
+      <a class="me" href="/admin/account"><span class="avatar" aria-hidden="true">{{printf "%.1s" (or .Name .Email)}}</span><span class="me-text"><span class="me-name">{{or .Name .Email}}</span><span class="me-role">{{title (str .Role)}}</span></span></a>
+      <form method="post" action="/admin/logout"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out">{{template "icon" "logout"}}</button></form>
+    </div>
+    {{end}}
+  </aside>
+  <div class="main-wrap">
+    {{if .Dev}}<div class="dev-banner">Development mode: two-factor sign-in is skipped and emails are printed to the terminal.</div>{{end}}
+    <main id="main" class="main" tabindex="-1">
+      {{template "flash" .}}
+      {{template "content" .}}
+    </main>
+  </div>
+  <script src="/admin/assets/admin.js?v={{.Version}}" type="module"></script>
+  {{block "scripts" .}}{{end}}
+</body>
+{{end}}
+</html>{{end}}

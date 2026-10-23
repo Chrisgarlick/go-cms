@@ -1,0 +1,14 @@
+<section class="card-grid">
+  {{with .Data.heading}}<h2>{{.}}</h2>{{end}}
+  <div class="cards cols-{{default "3" .Data.columns}}">
+    {{range .Data.cards}}
+    <article class="card">
+      {{with .image}}<div class="card-image">{{$.Page.Img . "medium"}}</div>{{end}}
+      <div class="card-body">
+        <h3 class="card-title">{{if .link}}<a href="{{safeURL (str .link.url)}}">{{.title}}</a>{{else}}{{.title}}{{end}}</h3>
+        {{with .text}}<p>{{.}}</p>{{end}}
+      </div>
+    </article>
+    {{end}}
+  </div>
+</section>

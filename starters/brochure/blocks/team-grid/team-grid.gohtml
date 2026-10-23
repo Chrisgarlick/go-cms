@@ -1,0 +1,14 @@
+<section class="section wrap">
+  {{with .Data.heading}}<h2 class="section-heading">{{.}}</h2>{{end}}
+  <ul class="team-grid">
+    {{range .Page.Query (dict "type" "team-member" "limit" 48 "order" "menu_order")}}
+    <li class="person">
+      <span class="person-photo">{{with .Image "thumb" "alt" ""}}{{.}}{{else}}<span class="person-initial" aria-hidden="true">{{printf "%.1s" .Title}}</span>{{end}}</span>
+      <h3>{{.Title}}</h3>
+      <p class="person-role">{{.Field "role"}}</p>
+      {{with .Field "bio"}}<p class="person-bio">{{.}}</p>{{end}}
+      {{with .Field "linkedin"}}<a href="{{safeURL (str .)}}" rel="noopener">LinkedIn</a>{{end}}
+    </li>
+    {{end}}
+  </ul>
+</section>

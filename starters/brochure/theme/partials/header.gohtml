@@ -1,0 +1,9 @@
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="site-title" href="/"{{if eq .Path "/"}} aria-current="page"{{end}}><span class="logo-mark" aria-hidden="true"></span>{{.Site.Name}}</a>
+    <div class="header-right">
+      {{with .Menu "primary"}}{{template "partials/nav" (dict "Items" . "Label" "Main")}}{{end}}
+      {{with .Option "company" "header_cta"}}<a class="button" href="{{safeURL (str .url)}}">{{default "Contact us" .label}}</a>{{end}}
+    </div>
+  </div>
+</header>

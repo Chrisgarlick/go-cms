@@ -1,0 +1,16 @@
+# Manual promotion (security fixes skip the soak): moves a release to a channel.
+name: promote
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { description: "Release tag, e.g. v1.4.2", required: true }
+      channel: { description: "edge, canary or stable", required: true, default: stable }
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: ./scripts/promote.sh --tag "${{ inputs.tag }}" --channel "${{ inputs.channel }}"

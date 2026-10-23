@@ -1,0 +1,10 @@
+name: hero
+label: Hero
+icon: layout-top
+category: layout
+fields:
+  - { name: heading, type: text, required: true, searchable: true }
+  - { name: subheading, type: textarea, searchable: true }
+  - { name: image, type: image }
+  - { name: cta, type: link }
+  - { name: style, type: select, options: [light, dark, image], default: light }

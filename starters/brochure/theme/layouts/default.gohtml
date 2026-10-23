@@ -1,0 +1,19 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.Site.Language}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{.Head}}
+<link rel="stylesheet" href="{{.Asset "base.css"}}">
+<link rel="stylesheet" href="{{.Asset "site.css"}}">
+</head>
+<body class="kind-{{.Kind}}{{with .Type}} type-{{.Name}}{{end}}">
+<a class="skip-link" href="#main">Skip to content</a>
+{{template "partials/header" .}}
+<main id="main" tabindex="-1">
+{{block "main" .}}{{end}}
+</main>
+{{template "partials/footer" .}}
+<script src="{{.Asset "embed.js"}}" defer></script>
+</body>
+</html>{{end}}

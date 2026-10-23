@@ -1,0 +1,5 @@
+<section class="cta">
+  <h2>{{.Data.heading}}</h2>
+  {{with .Data.text}}<p>{{.}}</p>{{end}}
+  {{with .Data.link}}<p class="buttons"><a class="button button-primary" href="{{safeURL (str .url)}}">{{default "Learn more" .label}}</a></p>{{end}}
+</section>

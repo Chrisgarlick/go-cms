@@ -1,0 +1,8 @@
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="site-title" href="/"{{if eq .Path "/"}} aria-current="page"{{end}}>
+      <span class="site-mark" aria-hidden="true"></span>{{.Site.Name}}
+    </a>
+    {{with .Menu "primary"}}{{template "partials/nav" (dict "Items" . "Label" "Main")}}{{end}}
+  </div>
+</header>

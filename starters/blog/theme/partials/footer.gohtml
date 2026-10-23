@@ -1,0 +1,12 @@
+<footer class="site-footer">
+  <div class="wrap site-footer-inner">
+    <div class="footer-about">
+      <p class="footer-title">{{.Site.Name}}</p>
+      {{with .Site.Description}}<p class="footer-description">{{.}}</p>{{end}}
+    </div>
+    <div class="footer-links">
+      {{with .Menu "footer"}}{{template "partials/nav" (dict "Items" . "Label" "Footer")}}{{end}}
+      <p class="footer-meta"><a href="/feed.xml">RSS feed</a> <span aria-hidden="true">·</span> &copy; {{year .Now}}</p>
+    </div>
+  </div>
+</footer>

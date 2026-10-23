@@ -1,0 +1,7 @@
+{{define "content"}}
+<header class="page-head"><div><h1>{{.Data.Page.Label}}</h1><p class="muted">Shown across the site.</p></div>
+  <button class="btn btn-primary" type="button" data-options-save>Save</button></header>
+<div id="options-editor"></div>
+<script type="application/json" id="options-data">{{json (dict "name" .Data.Page.Name "groups" .Data.Groups "values" .Data.Values "media" .Data.Media "csrf" .CSRF)}}</script>
+{{end}}
+{{define "scripts"}}<script src="/admin/assets/editor.js?v={{.Version}}" type="module"></script>{{end}}

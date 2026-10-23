@@ -1,0 +1,13 @@
+name: table
+label: Table
+icon: table
+category: text
+fields:
+  - { name: caption, type: text }
+  - { name: header, type: boolean, label: First row is a header, default: true }
+  - name: rows
+    type: repeater
+    min_items: 1
+    max_items: 200
+    fields:
+      - { name: cells, type: textarea, required: true, help: One cell per line }

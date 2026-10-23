@@ -1,0 +1,13 @@
+{{define "content"}}
+<h1 class="auth-title">Sign in</h1>
+<form method="post" action="/admin/login" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <input type="hidden" name="next" value="{{.Data.Next}}">
+  <label class="field"><span class="label">Email</span>
+    <input type="email" name="email" value="{{.Data.Email}}" autocomplete="username" required autofocus></label>
+  <label class="field"><span class="label">Password</span>
+    <input type="password" name="password" autocomplete="current-password" required></label>
+  <button class="btn btn-primary btn-block" type="submit">Continue</button>
+</form>
+<p class="auth-alt"><a href="/admin/reset">Forgotten your password?</a></p>
+{{end}}

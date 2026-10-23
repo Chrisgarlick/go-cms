@@ -1,0 +1,8 @@
+{{define "content"}}
+<div id="editor" class="editor" data-entry="{{.Data.Entry.ID}}">
+  <noscript><p class="flash flash-error">The editor needs JavaScript.</p></noscript>
+  <div class="editor-loading" aria-hidden="true"></div>
+</div>
+<script type="application/json" id="editor-data">{{json .Data}}</script>
+{{end}}
+{{define "scripts"}}<script src="/admin/assets/editor.js?v={{.Version}}" type="module"></script>{{end}}

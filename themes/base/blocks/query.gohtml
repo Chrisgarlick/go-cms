@@ -1,0 +1,11 @@
+{{$list := .Page.Query (dict "type" .Data.content_type "limit" .Data.limit "taxonomy" .Data.taxonomy "term" .Data.term "order" .Data.order)}}
+<section class="entry-list">
+  {{with .Data.heading}}<h2>{{.}}</h2>{{end}}
+  {{if eq (str .Data.layout) "cards"}}
+  <div class="cards">{{range $list}}{{template "partials/entry-card" .}}{{end}}</div>
+  {{else}}
+  <ul class="post-list">
+    {{range $list}}<li><a href="{{.URL}}">{{.Title}}</a>{{if not .Date.IsZero}} <time datetime="{{isodate .Date}}">{{date .Date "2 Jan 2006"}}</time>{{end}}</li>{{end}}
+  </ul>
+  {{end}}
+</section>

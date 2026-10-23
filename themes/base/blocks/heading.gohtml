@@ -1,0 +1,2 @@
+{{$id := .Settings.Anchor}}{{if not $id}}{{$id = slug (str .Data.text)}}{{end}}{{$l := str (default "2" .Data.level)}}
+{{if eq $l "3"}}<h3 id="{{$id}}">{{.Data.text}}</h3>{{else if eq $l "4"}}<h4 id="{{$id}}">{{.Data.text}}</h4>{{else}}<h2 id="{{$id}}">{{.Data.text}}</h2>{{end}}

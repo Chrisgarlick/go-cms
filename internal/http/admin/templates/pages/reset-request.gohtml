@@ -1,0 +1,10 @@
+{{define "content"}}
+<h1 class="auth-title">Reset your password</h1>
+<p class="muted">We'll email you a link. Open it in this browser within 30 minutes.</p>
+<form method="post" action="/admin/reset" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <label class="field"><span class="label">Email</span><input type="email" name="email" autocomplete="username" required autofocus></label>
+  <button class="btn btn-primary btn-block" type="submit">Send reset link</button>
+</form>
+<p class="auth-alt"><a href="/admin/login">Back to sign in</a></p>
+{{end}}

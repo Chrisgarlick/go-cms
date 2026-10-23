@@ -1,0 +1,12 @@
+name: accordion
+label: Accordion / FAQ
+icon: list
+category: layout
+fields:
+  - { name: faq_schema, type: boolean, label: Mark up as FAQ for search engines, default: false }
+  - name: items
+    type: repeater
+    min_items: 1
+    fields:
+      - { name: question, type: text, required: true, searchable: true }
+      - { name: answer, type: richtext, required: true, searchable: true }

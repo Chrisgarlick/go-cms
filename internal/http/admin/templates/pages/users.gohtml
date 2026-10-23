@@ -1,0 +1,37 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Users</h1><p class="muted">Everyone signs in with a password and two-factor authentication.</p></div></header>
+{{with .Data.InviteURL}}<div class="alert alert-info">{{template "icon" "mail"}}<div><strong>Invite link</strong> (valid 7 days)<input class="copy-input" readonly value="{{.}}" data-select></div></div>{{end}}
+<div class="grid-sidebar">
+  <form method="post" action="/admin/users/invite" class="panel stack pad">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <h2>Invite someone</h2>
+    <label class="field"><span class="label">Email</span><input type="email" name="email" required></label>
+    <label class="field"><span class="label">Name</span><input name="name"></label>
+    <label class="field"><span class="label">Role</span><select name="role">
+      <option value="editor">Editor: write and publish content</option>
+      <option value="admin">Admin: also users, redirects and settings</option>
+      {{if can .Session "owners.manage"}}<option value="owner">Owner: everything, including security</option>{{end}}</select></label>
+    <button class="btn btn-primary" type="submit">Send invitation</button>
+  </form>
+  <div class="panel">
+    <table class="table">
+      <thead><tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Last sign-in</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>{{range .Data.Users}}<tr>
+        <td class="cell-title">{{or .DisplayName .Email}}<span class="cell-sub">{{.Email}}</span></td>
+        <td>{{if or (eq .ID $.Data.Me) (and (eq .Role "owner") (not (can $.Session "owners.manage")))}}{{title .Role}}{{else}}
+          <form method="post" action="/admin/users/{{.ID}}/role" class="inline-form" data-autosubmit><input type="hidden" name="csrf" value="{{$.CSRF}}">
+          <select name="role" aria-label="Role for {{.Email}}"><option value="editor"{{if eq .Role "editor"}} selected{{end}}>Editor</option><option value="admin"{{if eq .Role "admin"}} selected{{end}}>Admin</option>{{if can $.Session "owners.manage"}}<option value="owner"{{if eq .Role "owner"}} selected{{end}}>Owner</option>{{end}}</select></form>{{end}}</td>
+        <td>{{template "status" .Status}}{{if not .TotpConfirmed}} <span class="badge badge-warn" title="Two-factor not set up yet">No 2FA</span>{{end}}</td>
+        <td class="muted">{{if .LastLoginAt}}{{ago (deref .LastLoginAt)}}{{else}}Never{{end}}</td>
+        <td class="cell-actions">{{if ne .ID $.Data.Me}}{{if or (ne .Role "owner") (can $.Session "owners.manage")}}
+          <details class="menu-pop"><summary class="btn btn-ghost btn-sm">More</summary><div class="menu-pop-body">
+            {{if eq .Status "disabled"}}<form method="post" action="/admin/users/{{.ID}}/enable"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="menu-pop-item">Enable</button></form>
+            {{else}}<form method="post" action="/admin/users/{{.ID}}/disable"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="menu-pop-item">Disable</button></form>{{end}}
+            {{if can $.Session "owners.manage"}}<form method="post" action="/admin/users/{{.ID}}/reset-2fa" data-confirm="Reset two-factor for {{.Email}}? They will set it up again at next sign-in."><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="menu-pop-item">Reset two-factor</button></form>{{end}}
+            <form method="post" action="/admin/users/{{.ID}}/delete" data-confirm="Delete {{.Email}}? Their content stays; their personal details are removed."><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="menu-pop-item danger">Delete user</button></form>
+          </div></details>{{end}}{{end}}</td>
+      </tr>{{end}}</tbody>
+    </table>
+  </div>
+</div>
+{{end}}

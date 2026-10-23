@@ -1,0 +1,8 @@
+{{define "main"}}
+<div class="page-hero wrap">
+  <p class="kicker">Error 404</p>
+  <h1>We couldn't find that page</h1>
+  <p class="lede">It may have moved. Try the home page or get in touch.</p>
+  <p class="buttons"><a class="button" href="/">Home page</a>{{with .Option "company" "email"}}<a class="button button-secondary" href="mailto:{{.}}">Email us</a>{{end}}</p>
+</div>
+{{end}}

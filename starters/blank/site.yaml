@@ -1,0 +1,7 @@
+name: __SITE_NAME__
+description: ""
+locale: en-GB
+timezone: Europe/London
+core:
+  channel: stable
+  min_version: __CMS_VERSION__

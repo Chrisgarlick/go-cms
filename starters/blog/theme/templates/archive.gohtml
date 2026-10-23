@@ -1,0 +1,12 @@
+{{define "main"}}
+<div class="wrap">
+  <header class="page-header">
+    <h1>{{.Title}}</h1>
+    {{with .Description}}<p class="page-lede">{{.}}</p>{{end}}
+  </header>
+  {{if .Entries}}
+  <div class="post-rows">{{range .Entries}}{{template "partials/post-row" .}}{{end}}</div>
+  {{template "partials/pagination" .}}
+  {{else}}<p class="empty">Nothing published here yet.</p>{{end}}
+</div>
+{{end}}

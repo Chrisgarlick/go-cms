@@ -1,0 +1,4 @@
+<figure class="code-block">
+  {{with .Data.filename}}<figcaption class="code-filename">{{.}}</figcaption>{{end}}
+  <pre><code{{with .Data.language}} class="language-{{slug (str .)}}"{{end}}>{{.Data.code}}</code></pre>
+</figure>

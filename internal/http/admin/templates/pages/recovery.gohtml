@@ -1,0 +1,8 @@
+{{define "content"}}
+<h1 class="auth-title">Save your recovery codes</h1>
+<p class="muted">If you lose your phone, each of these codes lets you sign in once. Store them in your password manager. They won't be shown again.</p>
+<ol class="recovery-codes">{{range .Data.Recovery}}<li><code>{{.}}</code></li>{{end}}</ol>
+<button class="btn btn-ghost btn-block" type="button" data-copy-codes>Copy codes</button>
+<a class="btn btn-primary btn-block" href="/admin/?ok=enrolled">I've saved them, continue</a>
+<script src="/admin/assets/admin.js?v={{.Version}}" type="module"></script>
+{{end}}

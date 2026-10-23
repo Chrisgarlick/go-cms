@@ -1,0 +1,16 @@
+{{define "main"}}
+<article class="entry wrap">
+  <header class="entry-header">
+    <h1 class="entry-title">{{.Entry.Title}}</h1>
+    {{if and .Type (not .Type.Hierarchical) (not .Entry.Date.IsZero)}}
+    <p class="entry-meta">
+      <time datetime="{{isodate .Entry.Date}}">{{date .Entry.Date}}</time>
+      {{with .Entry.AuthorName}}<span class="sep" aria-hidden="true">·</span> <span class="author">{{.}}</span>{{end}}
+      <span class="sep" aria-hidden="true">·</span> {{.Entry.ReadingTime}} min read
+    </p>
+    {{end}}
+  </header>
+  {{with .Entry.Image "large" "loading" "eager"}}<figure class="entry-featured">{{.}}</figure>{{end}}
+  <div class="entry-content">{{.Content}}</div>
+</article>
+{{end}}

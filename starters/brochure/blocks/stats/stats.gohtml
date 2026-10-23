@@ -1,0 +1,6 @@
+<section class="stats wrap">
+  {{with .Data.heading}}<h2 class="section-heading">{{.}}</h2>{{end}}
+  <dl class="stats-grid">
+    {{range .Data.items}}<div class="stat"><dt>{{.label}}</dt><dd>{{.value}}</dd></div>{{end}}
+  </dl>
+</section>

@@ -1,0 +1,5 @@
+{{$preset := "large"}}{{if eq (str .Data.size) "medium"}}{{$preset = "medium"}}{{else if eq (str .Data.size) "full"}}{{$preset = "xl"}}{{end}}
+<figure class="figure size-{{default "large" .Data.size}}">
+  {{if .Data.link}}<a href="{{safeURL (str .Data.link)}}">{{end}}{{.Page.Img .Data.image $preset}}{{if .Data.link}}</a>{{end}}
+  {{with .Data.caption}}<figcaption>{{.}}</figcaption>{{end}}
+</figure>

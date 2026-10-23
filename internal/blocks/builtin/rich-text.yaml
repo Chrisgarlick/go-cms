@@ -1,0 +1,6 @@
+name: rich-text
+label: Text
+icon: text
+category: text
+fields:
+  - { name: body, type: richtext, searchable: true }

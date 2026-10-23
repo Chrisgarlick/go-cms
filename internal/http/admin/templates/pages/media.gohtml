@@ -1,0 +1,34 @@
+{{define "content"}}
+<header class="page-head">
+  <div><h1>Media</h1><p class="muted">{{.Data.Total}} files · up to {{.Data.MaxMB}} MB each</p></div>
+  <label class="btn btn-primary">{{template "icon" "upload"}} Upload<input type="file" multiple hidden data-upload data-csrf="{{.CSRF}}"></label>
+</header>
+<div class="toolbar">
+  <nav class="tabs" aria-label="Filter by type">
+    <a class="tab{{if and (eq .Data.Kind "") (not .Data.Unused)}} is-active{{end}}" href="?">All</a>
+    <a class="tab{{if eq .Data.Kind "image/"}} is-active{{end}}" href="?kind=image/">Images</a>
+    <a class="tab{{if eq .Data.Kind "application/"}} is-active{{end}}" href="?kind=application/">Documents</a>
+    <a class="tab{{if eq .Data.Kind "video/"}} is-active{{end}}" href="?kind=video/">Video</a>
+    <a class="tab{{if .Data.Unused}} is-active{{end}}" href="?unused=1">Unused</a>
+  </nav>
+  <form class="search" role="search"><input type="hidden" name="kind" value="{{.Data.Kind}}"><label class="visually-hidden" for="q">Search media</label>
+    <input id="q" type="search" name="q" value="{{.Data.Query}}" placeholder="Search names and alt text…"></form>
+</div>
+<div class="dropzone" data-dropzone data-csrf="{{.CSRF}}"><p>{{template "icon" "upload"}} Drop files here to upload</p><div class="upload-progress" data-progress></div></div>
+{{if .Data.Items}}
+<ul class="media-grid">
+  {{range .Data.Items}}
+  <li class="media-tile">
+    <a href="/admin/media/{{.ID}}">
+      {{if .Thumb}}<img src="{{.Thumb}}" alt="" loading="lazy" width="160" height="160">{{else if .IsImage}}<span class="media-placeholder">Processing…</span>{{else}}<span class="media-placeholder">{{template "icon" "file"}}<span>{{.Mime}}</span></span>{{end}}
+      <span class="media-name">{{.Filename}}</span>
+      {{if and .IsImage (eq .Alt "")}}<span class="media-flag" title="Missing alt text">No alt</span>{{end}}
+    </a>
+  </li>
+  {{end}}
+</ul>
+{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" (printf "kind=%s&q=%s&" .Data.Kind .Data.Query))}}
+{{else}}
+<div class="empty-state">{{template "icon" "image"}}<h2>No files here yet</h2><p class="muted">Drag files onto this page or use Upload.</p></div>
+{{end}}
+{{end}}

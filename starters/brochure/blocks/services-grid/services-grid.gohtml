@@ -1,0 +1,16 @@
+<section class="section wrap">
+  <header class="section-head">
+    {{with .Data.heading}}<h2 class="section-heading">{{.}}</h2>{{end}}
+    {{with .Data.intro}}<p class="lede">{{.}}</p>{{end}}
+  </header>
+  <div class="service-grid">
+    {{range .Page.Query (dict "type" "service" "limit" (default 6 .Data.limit) "order" "menu_order")}}
+    <a class="service-card" href="{{.URL}}">
+      <span class="service-icon icon-{{default "strategy" (.Field "icon")}}" aria-hidden="true"></span>
+      <h3>{{.Title}}</h3>
+      <p>{{default .Excerpt (.Field "summary")}}</p>
+      <span class="more" aria-hidden="true">Learn more</span>
+    </a>
+    {{end}}
+  </div>
+</section>

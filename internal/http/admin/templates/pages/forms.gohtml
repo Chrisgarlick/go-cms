@@ -1,0 +1,15 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Form submissions</h1><p class="muted">Messages sent through the forms on your site. They are stored encrypted and deleted automatically after each form's retention period.</p></div></header>
+<section class="panel">
+  <table class="table">
+    <thead><tr><th scope="col">Form</th><th scope="col">Submissions</th><th scope="col">Unread</th><th scope="col">Kept for</th><th scope="col">Emails go to</th></tr></thead>
+    <tbody>{{range .Data}}<tr>
+      <td><a href="/admin/forms/{{.Form.Name}}/">{{.Form.Label}}</a></td>
+      <td>{{.Total}}</td>
+      <td>{{if .Unread}}<span class="badge">{{.Unread}} new</span>{{else}}<span class="muted">0</span>{{end}}</td>
+      <td class="muted">{{.Form.RetentionDays}} days</td>
+      <td class="muted">{{range $i, $e := .Form.Notify}}{{if $i}}, {{end}}{{$e}}{{else}}Nobody (admin only){{end}}</td>
+    </tr>{{end}}</tbody>
+  </table>
+</section>
+{{end}}

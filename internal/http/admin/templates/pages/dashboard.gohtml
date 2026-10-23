@@ -1,0 +1,43 @@
+{{define "content"}}
+<header class="page-head">
+  <div><h1>Dashboard</h1><p class="muted">Welcome back{{with .Session.Name}}, {{.}}{{end}}.</p></div>
+</header>
+{{if .Data.Critical}}
+<a class="alert alert-danger" href="/admin/security/">{{template "icon" "shield"}}<span><strong>{{.Data.Critical}} serious security {{if eq .Data.Critical 1}}finding needs{{else}}findings need{{end}} attention.</strong> Review them on the security page.</span></a>
+{{end}}
+<section class="stat-grid" aria-label="Content overview">
+  {{range .Data.Counts}}
+  <a class="stat" href="/admin/content/{{.Type.Name}}/">
+    <span class="stat-label">{{.Type.Label.Plural}}</span>
+    <span class="stat-value">{{.Published}}</span>
+    <span class="stat-sub">published{{if .Drafts}} · {{.Drafts}} draft{{if ne .Drafts 1}}s{{end}}{{end}}{{if .Scheduled}} · {{.Scheduled}} scheduled{{end}}</span>
+  </a>
+  {{end}}
+</section>
+<div class="grid-2">
+  <section class="panel">
+    <header class="panel-head"><h2>Recently edited</h2></header>
+    {{if .Data.Recent}}
+    <ul class="list">
+      {{range .Data.Recent}}
+      <li><a class="list-link" href="/admin/entries/{{.ID}}"><span class="list-title">{{or .DraftTitle "Untitled"}}</span>
+        <span class="list-meta">{{title .Type}} · {{ago .UpdatedAt}}{{with .AuthorName}} · {{.}}{{end}}</span></a>
+        {{if and .PublishedVersion (ne (deref2 .PublishedVersion) .Version)}}{{template "status" "pending"}}{{else}}{{template "status" .Status}}{{end}}</li>
+      {{end}}
+    </ul>
+    {{else}}<p class="muted pad">Nothing yet. Create your first entry from the sidebar.</p>{{end}}
+  </section>
+  <section class="panel">
+    <header class="panel-head"><h2>Scheduled</h2></header>
+    {{if .Data.Scheduled}}
+    <ul class="list">{{range .Data.Scheduled}}<li><a class="list-link" href="/admin/entries/{{.ID}}"><span class="list-title">{{or .DraftTitle "Untitled"}}</span>
+      <span class="list-meta">{{date (deref .ScheduledAt)}}</span></a></li>{{end}}</ul>
+    {{else}}<p class="muted pad">Nothing scheduled.</p>{{end}}
+    <header class="panel-head"><h2>Media health</h2></header>
+    <ul class="list">
+      <li><a class="list-link" href="/admin/media/?kind=image/"><span class="list-title">Images without alt text</span><span class="list-meta">Screen readers need a description</span></a><span class="count{{if .Data.MissingAlt}} count-warn{{end}}">{{.Data.MissingAlt}}</span></li>
+      <li><a class="list-link" href="/admin/media/?unused=1"><span class="list-title">Unused files</span><span class="list-meta">Not used by any published entry</span></a><span class="count">{{.Data.Unused}}</span></li>
+    </ul>
+  </section>
+</div>
+{{end}}

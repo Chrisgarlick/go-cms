@@ -1,0 +1,14 @@
+# A public form. Submissions are stored encrypted, listed under
+# Admin → Form submissions, and emailed to the addresses in notify.
+name: contact
+label: Contact
+notify: [hello@example.com]
+reply_to: email
+subject: "New enquiry from {name}"
+success: Thanks for getting in touch. We'll reply within one working day.
+retention_days: 365
+fields:
+  - { name: name, label: Your name, type: text, required: true, max_length: 120 }
+  - { name: email, label: Email, type: email, required: true }
+  - { name: company, type: text, max_length: 120 }
+  - { name: message, label: "How can we help?", type: textarea, required: true, max_length: 5000 }

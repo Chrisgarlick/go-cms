@@ -1,0 +1,16 @@
+name: company
+label: Company details
+location:
+  - { options_page: company }
+fields:
+  - { name: email, type: email, required: true }
+  - { name: phone, type: text }
+  - { name: address, type: textarea, rows: 3 }
+  - { name: header_cta, type: link, label: Header button }
+  - name: social
+    type: repeater
+    label: Social links
+    max_items: 8
+    fields:
+      - { name: network, type: select, options: [LinkedIn, X, Instagram, GitHub, YouTube, Facebook] }
+      - { name: url, type: url, required: true }

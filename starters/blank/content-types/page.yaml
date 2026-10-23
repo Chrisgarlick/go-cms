@@ -1,0 +1,8 @@
+name: page
+label: { singular: Page, plural: Pages }
+hierarchical: true
+url: /{path}
+supports: [title, slug, excerpt, featured_image, blocks, revisions, seo]
+blocks:
+  default: [rich-text]
+sort: { field: menu_order, order: asc }

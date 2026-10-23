@@ -1,0 +1,7 @@
+{{define "pager"}}{{if gt .Pages 1}}
+<nav class="pager" aria-label="Pagination">
+  {{if gt .Page 1}}<a class="btn btn-ghost" href="?{{.Base}}page={{sub .Page 1}}">Previous</a>{{end}}
+  <span class="muted">Page {{.Page}} of {{.Pages}}</span>
+  {{if lt .Page .Pages}}<a class="btn btn-ghost" href="?{{.Base}}page={{add .Page 1}}">Next</a>{{end}}
+</nav>
+{{end}}{{end}}

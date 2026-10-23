@@ -1,0 +1,4 @@
+{{define "flash"}}
+{{with .Flash}}<div class="flash flash-ok" role="status">{{template "icon" "check"}}<span>{{.}}</span></div>{{end}}
+{{with .Error}}<div class="flash flash-error" role="alert">{{template "icon" "alert"}}<span>{{.}}</span></div>{{end}}
+{{end}}

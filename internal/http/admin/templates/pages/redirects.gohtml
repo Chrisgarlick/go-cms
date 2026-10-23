@@ -1,0 +1,41 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Redirects</h1><p class="muted">{{len .Data.Rules}} rules. Rules are checked before any page, so they always win.</p></div></header>
+{{if .Data.Problems}}<div class="alert alert-warn">{{template "icon" "alert"}}<div><strong>Chains or loops found</strong><ul>{{range .Data.Problems}}<li>{{.}}</li>{{end}}</ul></div></div>{{end}}
+<div class="grid-sidebar">
+  <form method="post" action="/admin/redirects/" class="panel stack pad">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <h2>Add a redirect</h2>
+    <label class="field"><span class="label">From</span><input name="source" placeholder="/old-page" value="{{.Data.Prefill}}" required></label>
+    <label class="field"><span class="label">To</span><input name="target" placeholder="/new-page or https://…"><span class="hint">Leave empty for 410 Gone.</span></label>
+    <div class="row">
+      <label class="field"><span class="label">Type</span><select name="status"><option value="301">301 Permanent</option><option value="302">302 Temporary</option><option value="308">308 Permanent (keep method)</option><option value="307">307 Temporary (keep method)</option><option value="410">410 Gone</option></select></label>
+      <label class="field"><span class="label">Match</span><select name="match_type"><option value="exact">Exact path</option><option value="prefix">Path prefix</option><option value="regex">Regular expression</option></select></label>
+    </div>
+    <label class="check"><input type="checkbox" name="preserve_query" checked> Keep query strings</label>
+    <label class="field"><span class="label">Note</span><input name="note" placeholder="Optional"></label>
+    <div class="row"><button class="btn btn-primary" type="submit">Add redirect</button></div>
+  </form>
+  <div class="stack">
+    <section class="panel">
+      {{if .Data.Rules}}
+      <table class="table">
+        <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Type</th><th scope="col">Hits</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>{{range .Data.Rules}}<tr>
+          <td class="cell-mono">{{.Source}}{{if ne .MatchType "exact"}} <span class="badge">{{.MatchType}}</span>{{end}}{{if .IsAuto}} <span class="badge badge-muted" title="Created automatically when a URL changed">auto</span>{{end}}</td>
+          <td class="cell-mono">{{or .Target "—"}}</td><td>{{.StatusCode}}</td><td class="muted">{{.Hits}}</td>
+          <td class="cell-actions"><form method="post" action="/admin/redirects/{{.ID}}/delete" data-confirm="Delete this redirect?"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm btn-danger-text">Delete</button></form></td>
+        </tr>{{end}}</tbody>
+      </table>
+      {{else}}<p class="muted pad">No redirects yet. They are created automatically when you change a published page's address.</p>{{end}}
+    </section>
+    <section class="panel">
+      <header class="panel-head"><h2>Recent 404s</h2><span class="muted">Pages people tried to reach that don't exist</span></header>
+      {{if .Data.NotFound}}
+      <table class="table"><thead><tr><th scope="col">Path</th><th scope="col">Hits</th><th scope="col">Last seen</th><th></th></tr></thead>
+      <tbody>{{range .Data.NotFound}}<tr><td class="cell-mono">{{.Path}}</td><td>{{.Hits}}</td><td class="muted">{{ago .LastSeen}}</td>
+        <td class="cell-actions"><a class="btn btn-ghost btn-sm" href="?source={{.Path}}">Redirect</a></td></tr>{{end}}</tbody></table>
+      {{else}}<p class="muted pad">No broken links recorded.</p>{{end}}
+    </section>
+  </div>
+</div>
+{{end}}

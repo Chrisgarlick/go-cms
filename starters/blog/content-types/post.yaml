@@ -1,0 +1,13 @@
+name: post
+label: { singular: Post, plural: Posts }
+icon: pencil
+url: /blog/{slug}
+archive: /blog
+taxonomies: [category, tag]
+feed: true
+supports: [title, slug, excerpt, featured_image, blocks, revisions, scheduling, seo, author]
+blocks:
+  allowed: [rich-text, heading, image, gallery, embed, quote, code, callout, columns, accordion, table, button, separator, html]
+  default: [rich-text]
+sort: { field: published_at, order: desc }
+list_columns: [title, status, author, published_at]

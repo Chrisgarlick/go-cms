@@ -1,0 +1,8 @@
+name: code
+label: Code
+icon: code
+category: text
+fields:
+  - { name: code, type: code, required: true }
+  - { name: language, type: text, placeholder: e.g. go, js, bash }
+  - { name: filename, type: text }

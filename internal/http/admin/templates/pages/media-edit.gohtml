@@ -1,0 +1,44 @@
+{{define "content"}}
+{{$m := .Data.Item}}
+<header class="page-head">
+  <div><p class="crumbs"><a href="/admin/media/">Media</a></p><h1 class="truncate">{{$m.Filename}}</h1>
+  <p class="muted">{{$m.Mime}} · {{kb $m.Size}}{{if $m.Width}} · {{$m.Width}} × {{$m.Height}}{{end}} · uploaded {{ago .Data.Raw.CreatedAt}}</p></div>
+  {{if $m.URL}}<a class="btn" href="{{$m.URL}}" target="_blank" rel="noopener">Open file {{template "icon" "external"}}</a>{{end}}
+</header>
+<div class="grid-media-edit">
+  <div class="panel media-preview">
+    {{if $m.IsImage}}
+      {{if $m.URL}}
+      <div class="focal" data-focal>
+        <img src="{{$m.URL}}" alt="{{$m.Alt}}" data-focal-img>
+        <span class="focal-dot" data-focal-dot aria-hidden="true"></span>
+      </div>
+      <p class="hint pad">Click the image to set the focal point used when it is cropped.</p>
+      {{else}}<p class="pad muted">Sizes are being generated…</p>{{end}}
+    {{else}}<p class="pad muted">{{template "icon" "file"}} No preview for this file type.</p>{{end}}
+  </div>
+  <form method="post" action="/admin/media/{{$m.ID}}" class="panel stack pad">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <input type="hidden" name="focal_x" value="{{.Data.Raw.FocalX}}" data-focal-x>
+    <input type="hidden" name="focal_y" value="{{.Data.Raw.FocalY}}" data-focal-y>
+    {{if $m.IsImage}}
+    <label class="field"><span class="label">Alt text</span>
+      <textarea name="alt" rows="2" maxlength="1000" data-count>{{$m.Alt}}</textarea>
+      <span class="hint">Describe the image for people who can't see it. Leave empty only for purely decorative images.</span></label>
+    {{end}}
+    <label class="field"><span class="label">Title</span><input name="title" value="{{$m.Title}}" maxlength="1000"></label>
+    <label class="field"><span class="label">Caption</span><textarea name="caption" rows="2" maxlength="1000">{{$m.Caption}}</textarea></label>
+    <label class="field"><span class="label">Credit</span><input name="credit" value="{{$m.Credit}}" maxlength="1000"></label>
+    <div class="row"><button class="btn btn-primary" type="submit">Save</button></div>
+  </form>
+</div>
+<section class="panel">
+  <header class="panel-head"><h2>Used in</h2></header>
+  {{if .Data.Usage}}<ul class="list">{{range .Data.Usage}}<li><a class="list-link" href="/admin/entries/{{.ID}}"><span class="list-title">{{or .DraftTitle "Untitled"}}</span><span class="list-meta">{{title .Type}} · {{.FieldPath}}</span></a></li>{{end}}</ul>
+  {{else}}<p class="muted pad">Not used by any published entry.</p>{{end}}
+</section>
+<form method="post" action="/admin/media/{{$m.ID}}/delete" class="danger-zone" data-confirm="Delete this file?{{if .Data.Usage}} It is used by published content.{{end}}">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">{{if .Data.Usage}}<input type="hidden" name="force" value="1">{{end}}
+  <button class="btn btn-danger" type="submit">Delete file</button>
+</form>
+{{end}}

@@ -1,0 +1,8 @@
+<article class="post-row">
+  <time class="post-row-date" datetime="{{isodate .Date}}">{{date .Date "2 Jan 2006"}}</time>
+  <div class="post-row-body">
+    <h3 class="post-row-title"><a href="{{.URL}}">{{.Title}}</a></h3>
+    {{with .Excerpt}}<p class="post-row-excerpt">{{.}}</p>{{end}}
+    {{with .Terms "category"}}<p class="post-row-terms">{{range $i, $t := .}}{{if $i}}, {{end}}<a href="{{$t.URL}}">{{$t.Name}}</a>{{end}}</p>{{end}}
+  </div>
+</article>

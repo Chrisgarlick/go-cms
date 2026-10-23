@@ -1,0 +1,121 @@
+# Sample content for a business site. Loaded once by `cms dev`.
+settings:
+  site.tagline: Digital products that grow your business.
+
+options:
+  company:
+    email: hello@example.com
+    phone: "+44 20 7946 0000"
+    address: "1 Example Street\nLondon EC1A 1AA"
+    header_cta: { url: /contact/, label: Start a project }
+    social:
+      - { network: LinkedIn, url: "https://www.linkedin.com/" }
+      - { network: GitHub, url: "https://github.com/" }
+
+entries:
+  - type: service
+    title: Product strategy
+    slug: product-strategy
+    fields: { icon: strategy, summary: "Workshops, research and roadmaps that turn a good idea into a plan your team believes in." }
+    publish: true
+    body: |
+      We start by understanding your customers, your market and your constraints. Then we help you decide what to build first, and what to leave out.
+
+      ## What you get
+
+      - Customer interviews and a clear problem statement
+      - A prioritised roadmap for the next two quarters
+      - Success measures everyone agrees on
+  - type: service
+    title: Design
+    slug: design
+    fields: { icon: design, summary: "Interfaces that are simple to use, accessible to everyone and consistent across every screen." }
+    publish: true
+    body: |
+      Good design is invisible. We design products people understand on first use, and design systems your team can extend for years.
+  - type: service
+    title: Engineering
+    slug: engineering
+    fields: { icon: engineering, summary: "Fast, secure web applications built to last, with automated tests and deployments from day one." }
+    publish: true
+    body: |
+      We build with boring, proven technology and ship small changes often. Every project includes automated tests, monitoring and a deployment pipeline.
+  - type: case-study
+    title: Rebuilding checkout for a growing retailer
+    slug: retailer-checkout
+    excerpt: A faster, simpler checkout that lifted conversion within a month of launch.
+    fields: { client: Northwind Retail, year: 2026, results: [{ value: "+32%", label: conversion rate }, { value: "-1.8s", label: time to checkout }] }
+    publish: true
+    days_ago: 12
+    body: |
+      Northwind's checkout had grown over ten years into seven steps and three different designs. We replaced it with a single page that remembers returning customers.
+  - type: case-study
+    title: An appointments platform for 40 clinics
+    slug: clinic-appointments
+    excerpt: Online booking that patients actually use, connected to existing clinic systems.
+    fields: { client: Harbour Health, year: 2025, results: [{ value: "68%", label: of bookings now online }, { value: "4.8/5", label: patient rating }] }
+    publish: true
+    days_ago: 40
+    body: |
+      Harbour Health's receptionists spent most of the morning on the phone. We built an accessible booking flow and integrated it with the clinics' existing calendar system.
+  - type: team-member
+    title: Sam Taylor
+    fields: { role: Founder and strategy lead, bio: "Fifteen years helping teams decide what to build." }
+    publish: true
+  - type: team-member
+    title: Priya Shah
+    fields: { role: Head of design, bio: "Designs products that work for everyone, first time." }
+    publish: true
+  - type: team-member
+    title: Alex Morgan
+    fields: { role: Lead engineer, bio: "Builds fast, secure systems with a lot of tests." }
+    publish: true
+  - type: page
+    title: Home
+    slug: home
+    front_page: true
+    publish: true
+    blocks:
+      - type: hero
+        data: { heading: "Digital products that grow your business", subheading: "Strategy, design and engineering for teams who want to ship things that matter.", style: light, cta: { url: /contact/, label: Start a project } }
+      - type: logo-strip
+        data: { heading: "Trusted by teams at", logos: [{ name: Northwind }, { name: Harbour Health }, { name: Contoso }, { name: Fabrikam }, { name: Tailspin }] }
+      - type: services-grid
+        data: { heading: "What we do", intro: "Three disciplines, one team. We stay with you from first idea to launch and beyond.", limit: 6 }
+      - type: stats
+        data: { items: [{ value: "120+", label: projects delivered }, { value: "12", label: years in business }, { value: "98%", label: clients who come back }] }
+      - type: work-grid
+        data: { heading: "Recent work", limit: 3 }
+      - type: testimonial
+        data: { quote: "They understood our customers better than we did, and shipped the new checkout a month early.", name: Jordan Lee, role: "COO, Northwind Retail" }
+      - type: cta
+        data: { heading: "Have a project in mind?", text: "Tell us what you're trying to achieve. We'll reply within one working day.", link: { url: /contact/, label: Get in touch } }
+  - type: page
+    title: About
+    slug: about
+    excerpt: A small team that cares about doing things properly.
+    publish: true
+    blocks:
+      - type: rich-text
+        data:
+          body: { type: doc, content: [{ type: paragraph, content: [{ type: text, text: "We are a small, senior team. Everyone who works on your project has done it many times before." }] }] }
+      - type: team-grid
+        data: { heading: "The team" }
+  - type: page
+    title: Contact
+    slug: contact
+    excerpt: Tell us about your project.
+    publish: true
+    blocks:
+      - type: contact-details
+        data: { heading: "Let's talk", text: "Email is the quickest way to reach us. We reply within one working day." }
+
+menus:
+  primary:
+    - { label: Services, url: /services/ }
+    - { label: Work, url: /work/ }
+    - { label: About, entry: about }
+  footer:
+    - { label: Services, url: /services/ }
+    - { label: Work, url: /work/ }
+    - { label: Contact, entry: contact }

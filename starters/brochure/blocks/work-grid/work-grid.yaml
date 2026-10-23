@@ -1,0 +1,7 @@
+name: work-grid
+label: Latest work
+icon: layout-top
+category: dynamic
+fields:
+  - { name: heading, type: text, default: "Recent work" }
+  - { name: limit, type: number, min: 1, max: 9, default: 3 }

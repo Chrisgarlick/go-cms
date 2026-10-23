@@ -1,0 +1,4 @@
+<figure class="figure figure-embed">
+  {{.Page.Embed (str .Data.url) (str (default "" .Data.title))}}
+  {{with .Data.caption}}<figcaption>{{.}}</figcaption>{{end}}
+</figure>

@@ -1,0 +1,14 @@
+{{define "main"}}
+<div class="wrap">
+  <header class="archive-header">
+    <h1>{{.Title}}</h1>
+    {{with .Description}}<p class="archive-description">{{.}}</p>{{end}}
+  </header>
+  {{if .Entries}}
+  <div class="cards">{{range .Entries}}{{template "partials/entry-card" .}}{{end}}</div>
+  {{template "partials/pagination" .}}
+  {{else}}
+  <p class="empty">Nothing published here yet.</p>
+  {{end}}
+</div>
+{{end}}

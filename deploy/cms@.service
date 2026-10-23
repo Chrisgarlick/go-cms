@@ -1,0 +1,47 @@
+# Web instance. Two run during a deploy: cms@blue (:8081) and cms@green (:8082).
+[Unit]
+Description=cms web (%i)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cms
+Group=cms
+Environment=CMS_CONFIG=/etc/cms/config.yaml
+Environment=GOMEMLIMIT=100MiB
+Environment=CMS_LOG_FORMAT=json
+EnvironmentFile=-/etc/cms/%i.env
+ExecStart=/opt/cms/%i/cms serve --addr 127.0.0.1:${PORT}
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=40
+KillSignal=SIGTERM
+MemoryMax=192M
+LoadCredential=kek:/etc/cms/kek
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/cms
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

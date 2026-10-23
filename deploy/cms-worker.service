@@ -1,0 +1,39 @@
+# Background jobs: rendering, image processing, scheduling, webhooks, audits.
+[Unit]
+Description=cms worker
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cms
+Group=cms
+Environment=CMS_CONFIG=/etc/cms/config.yaml
+Environment=GOMEMLIMIT=56MiB
+Environment=CMS_LOG_FORMAT=json
+ExecStart=/opt/cms/current/cms worker
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+MemoryMax=384M
+LoadCredential=kek:/etc/cms/kek
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/cms
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

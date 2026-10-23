@@ -1,0 +1,9 @@
+name: embed
+label: Video or embed
+icon: video
+category: media
+help: YouTube, Vimeo, Spotify, CodePen or Loom links. Loads only when clicked.
+fields:
+  - { name: url, type: oembed, required: true }
+  - { name: title, type: text, help: Describes the embed for screen readers }
+  - { name: caption, type: text }

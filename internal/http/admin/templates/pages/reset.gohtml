@@ -1,0 +1,9 @@
+{{define "content"}}
+<h1 class="auth-title">Choose a new password</h1>
+<p class="muted">Use at least 12 characters. A short sentence works well.</p>
+<form method="post" action="/admin/reset/{{.Data.Token}}" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <label class="field"><span class="label">New password</span><input type="password" name="password" autocomplete="new-password" minlength="12" required autofocus></label>
+  <button class="btn btn-primary btn-block" type="submit">Set password</button>
+</form>
+{{end}}

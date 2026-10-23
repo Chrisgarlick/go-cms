@@ -1,0 +1,54 @@
+# Reproducible, stripped, static builds plus SBOM and a signed checksum file.
+# Signing uses a cosign key pair held in repository secrets (private repo:
+# keyless signing would publish the repo identity to the public Rekor log).
+version: 2
+project_name: cms
+before:
+  hooks:
+    - go mod verify
+builds:
+  - id: cms
+    main: ./cmd/cms
+    binary: cms
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X cms/internal/version.Version={{ .Version }}
+      - -X cms/internal/version.Commit={{ .FullCommit }}
+      - -X cms/internal/version.Date={{ .CommitDate }}
+      - -X cms/internal/version.Repo={{ .Env.GITHUB_REPOSITORY }}
+archives:
+  - formats: [tar.gz]
+    name_template: "cms_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: deploy/*
+        dst: deploy
+      - LICENSE*
+      - README.md
+checksum:
+  name_template: checksums.txt
+sboms:
+  - artifacts: archive
+signs:
+  - cmd: cosign
+    stdin: "{{ .Env.COSIGN_PASSWORD }}"
+    args: ["sign-blob", "--key=env://COSIGN_PRIVATE_KEY", "--tlog-upload=false", "--yes", "--output-signature=${signature}", "${artifact}"]
+    artifacts: checksum
+    output: true
+dockers_v2:
+  - id: cms
+    images: ["ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/cms"]
+    tags: ["{{ .Version }}", "edge"]
+    dockerfile: deploy/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+release:
+  draft: false
+  prerelease: auto
+  footer: |
+    channel:edge
+changelog:
+  use: github-native

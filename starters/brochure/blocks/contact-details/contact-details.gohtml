@@ -1,0 +1,11 @@
+<section class="contact wrap">
+  <div class="contact-intro">
+    <h2 class="section-heading">{{default "Get in touch" .Data.heading}}</h2>
+    {{with .Data.text}}<p class="lede">{{.}}</p>{{end}}
+  </div>
+  <dl class="contact-list">
+    {{with .Page.Option "company" "email"}}<div><dt>Email</dt><dd><a href="mailto:{{.}}">{{.}}</a></dd></div>{{end}}
+    {{with .Page.Option "company" "phone"}}<div><dt>Phone</dt><dd><a href="tel:{{.}}">{{.}}</a></dd></div>{{end}}
+    {{with .Page.Option "company" "address"}}<div><dt>Office</dt><dd>{{nl2br (str .)}}</dd></div>{{end}}
+  </dl>
+</section>

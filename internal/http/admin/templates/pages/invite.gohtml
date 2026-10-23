@@ -1,0 +1,11 @@
+{{define "content"}}
+<h1 class="auth-title">Welcome</h1>
+<p class="muted">You've been invited as <strong>{{.Data.Email}}</strong>. Choose a password; next you'll set up two-factor authentication.</p>
+<form method="post" action="/admin/invite/{{.Data.Token}}" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <label class="field"><span class="label">Your name</span><input name="name" value="{{.Data.Name}}" autocomplete="name"></label>
+  <label class="field"><span class="label">Password</span><input type="password" name="password" autocomplete="new-password" minlength="12" required>
+    <span class="hint">At least 12 characters.</span></label>
+  <button class="btn btn-primary btn-block" type="submit">Create account</button>
+</form>
+{{end}}

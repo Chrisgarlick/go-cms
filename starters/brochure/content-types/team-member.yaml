@@ -1,0 +1,11 @@
+name: team-member
+label: { singular: Team member, plural: Team }
+icon: users
+public: false
+supports: [title, featured_image, revisions]
+sort: { field: menu_order, order: asc }
+menu_position: 4
+fields:
+  - { name: role, type: text, required: true }
+  - { name: bio, type: textarea, max_length: 400 }
+  - { name: linkedin, type: url }
