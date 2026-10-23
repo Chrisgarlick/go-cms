@@ -1,0 +1,3 @@
+name: tag
+label: { singular: Tag, plural: Tags }
+url: /tag/{slug}

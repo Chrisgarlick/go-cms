@@ -1,0 +1,122 @@
+# Sample content loaded by `cms dev` the first time it runs (and by
+# `cms install --fixtures`). Edit or delete freely: it is never re-imported
+# once the site has entries.
+settings:
+  site.tagline: Notes on building things, slowly and properly.
+
+terms:
+  category:
+    - { name: Engineering, description: How things are built. }
+    - { name: Design, description: How things look and feel. }
+    - { name: Notes, description: Shorter thoughts. }
+  tag:
+    - { name: go }
+    - { name: performance }
+    - { name: writing }
+    - { name: accessibility }
+
+entries:
+  - type: page
+    title: About
+    slug: about
+    excerpt: Who writes this, and why.
+    publish: true
+    body: |
+      Hello, I'm the person behind this site. I write about the tools I use, the things I build and what I learn along the way.
+
+      ## What you'll find here
+
+      - Long-form posts on engineering and design
+      - Short notes when something is worth sharing
+      - The occasional deep dive into performance
+
+      Everything here is published with a small, fast content management system. Pages are rendered once and served as files, so the site stays quick on modest hardware.
+
+  - type: post
+    title: Why this site loads in under a second
+    slug: why-this-site-is-fast
+    excerpt: Every page is rendered once when it is published, compressed, and served as a static file.
+    terms: { category: [Engineering], tag: [performance, go] }
+    days_ago: 2
+    publish: true
+    body: |
+      Most websites build every page on every visit. This one doesn't.
+
+      When I publish a post, the CMS renders it once, compresses it with Brotli and gzip, and writes it to disk. The web server then serves that file directly, without asking the application or the database anything.
+
+      ## What happens when something changes
+
+      Each rendered page remembers what it read: the post, the menu, the list of recent posts. When any of those change, only the affected pages are rendered again.
+
+      > The fastest request is the one your application never sees.
+
+      ## The numbers
+
+      1. Pages are served from disk in a few milliseconds
+      2. The application idles at around 40 MB of memory
+      3. A small server handles thousands of visitors without noticing
+
+      ```go
+      // Rendering happens once, on publish:
+      res, _ := renderer.Render(ctx, "/blog/why-this-site-is-fast/")
+      disk.Write(path, res.Body) // plus .br and .gz
+      ```
+
+  - type: post
+    title: Writing in plain language
+    slug: writing-in-plain-language
+    excerpt: Short sentences, common words, one idea per paragraph. It is harder than it sounds.
+    terms: { category: [Notes], tag: [writing] }
+    days_ago: 9
+    publish: true
+    body: |
+      Good writing is mostly deletion. The first draft says what I think; the second says it to someone else.
+
+      A few rules I try to follow:
+
+      - Put the point first
+      - Keep sentences under 25 words
+      - Use the word people would use
+      - Cut every "very" and most adverbs
+
+      None of this is new. **Orwell** said most of it in 1946, and he was right then too.
+
+  - type: post
+    title: Accessibility is a feature, not a checklist
+    slug: accessibility-is-a-feature
+    excerpt: Keyboard navigation, clear focus, real headings and good contrast make a site better for everyone.
+    terms: { category: [Design], tag: [accessibility] }
+    days_ago: 16
+    publish: true
+    body: |
+      Accessibility work is often treated as a final pass before launch. That's the expensive way to do it.
+
+      ## Start with structure
+
+      Real headings in the right order, links that say where they go, buttons that are buttons. Screen readers depend on structure, and so does everyone skimming on a phone.
+
+      ## Make focus visible
+
+      If you can't see where you are on the page, you can't use the keyboard. This theme draws a clear outline around whatever has focus.
+
+      ## Respect preferences
+
+      People who ask their system for less motion or a dark colour scheme get exactly that here, with no extra code from the author.
+
+  - type: post
+    title: Hello, world
+    slug: hello-world
+    excerpt: A first post, so the archive isn't empty.
+    terms: { category: [Notes] }
+    days_ago: 30
+    publish: true
+    body: |
+      This is the first post on the new site. Edit or delete it from the admin, then write something of your own.
+
+menus:
+  primary:
+    - { label: Writing, url: /blog/ }
+    - { label: About, entry: about }
+  footer:
+    - { label: Search, url: /search/ }
+    - { label: About, entry: about }

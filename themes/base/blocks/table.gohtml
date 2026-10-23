@@ -1,0 +1,8 @@
+<figure class="table-wrap">
+  <table>
+    {{with .Data.caption}}<caption>{{.}}</caption>{{end}}
+    {{range $i, $r := .Data.rows}}
+    <tr>{{range lines (str $r.cells)}}{{if and (eq $i 0) $.Data.header}}<th scope="col">{{.}}</th>{{else}}<td>{{.}}</td>{{end}}{{end}}</tr>
+    {{end}}
+  </table>
+</figure>

@@ -1,0 +1,7 @@
+name: quote
+label: Quote
+icon: quote
+category: text
+fields:
+  - { name: text, type: textarea, required: true, searchable: true }
+  - { name: cite, type: text, label: Source }

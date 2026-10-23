@@ -1,0 +1,33 @@
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: standard
+  enable:
+    - gosec
+    - bodyclose
+    - errorlint
+    - misspell
+    - noctx
+    - sqlclosecheck
+    - unconvert
+    - staticcheck
+  settings:
+    gosec:
+      excludes:
+        - G104 # unhandled errors on best-effort cleanup are intentional
+        - G304 # file paths come from config, not users
+        - G204 # subprocesses are fixed binaries (vips, pg_dump, cosign)
+    misspell:
+      locale: UK
+  exclusions:
+    paths:
+      - internal/db/dbq
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx]
+      - text: "fmt.Sprintf.*(SELECT|INSERT|UPDATE|DELETE)"
+        linters: [gosec]
+        path: internal/(db|devdb)/
+formatters:
+  enable: [gofmt]

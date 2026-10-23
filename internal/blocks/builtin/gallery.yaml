@@ -1,0 +1,7 @@
+name: gallery
+label: Gallery
+icon: gallery
+category: media
+fields:
+  - { name: images, type: gallery, required: true, max_items: 60 }
+  - { name: columns, type: select, options: ["2", "3", "4"], default: "3" }

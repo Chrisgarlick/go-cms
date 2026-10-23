@@ -1,0 +1,9 @@
+name: columns
+label: Columns
+icon: columns
+category: layout
+fields:
+  - { name: layout, type: select, options: ["50-50", "33-67", "67-33", "33-33-33"], default: "50-50" }
+children:
+  allowed: [rich-text, heading, image, quote, button, code, callout, embed]
+  max: 12

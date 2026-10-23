@@ -1,0 +1,31 @@
+{{define "main"}}
+<div class="wrap">
+  <section class="intro">
+    <h1 class="intro-title">{{default .Site.Name .Site.Tagline}}</h1>
+    {{with .Site.Description}}<p class="intro-text">{{.}}</p>{{end}}
+  </section>
+  {{if .Entries}}
+  {{$first := index .Entries 0}}
+  {{if and (eq .Pagination.Page 1) $first.Meta.FeaturedImage}}
+  <article class="feature">
+    <a class="feature-image" href="{{$first.URL}}" tabindex="-1" aria-hidden="true">{{$first.Image "card" "loading" "eager"}}</a>
+    <div class="feature-body">
+      <p class="kicker">Latest{{with $first.Terms "category"}} · {{(index . 0).Name}}{{end}}</p>
+      <h2 class="feature-title"><a href="{{$first.URL}}">{{$first.Title}}</a></h2>
+      <p class="feature-excerpt">{{$first.Excerpt}}</p>
+      <p class="feature-meta"><time datetime="{{isodate $first.Date}}">{{date $first.Date}}</time></p>
+    </div>
+  </article>
+  {{end}}
+  <section class="post-list-section" aria-labelledby="latest">
+    <h2 id="latest" class="section-title">Writing</h2>
+    <div class="post-rows">
+      {{range $i, $e := .Entries}}{{if or $i (not $first.Meta.FeaturedImage) (gt $.Pagination.Page 1)}}{{template "partials/post-row" $e}}{{end}}{{end}}
+    </div>
+    {{template "partials/pagination" .}}
+  </section>
+  {{else}}
+  <p class="empty">Nothing published yet. Open <a href="/admin/">the admin</a> to write your first post.</p>
+  {{end}}
+</div>
+{{end}}

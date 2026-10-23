@@ -1,0 +1,5 @@
+name: __SITE_SLUG__
+extends: base
+menus:
+  primary: Main navigation
+  footer: Footer links

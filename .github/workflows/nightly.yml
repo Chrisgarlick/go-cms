@@ -1,0 +1,55 @@
+# Nightly (spec 9.6): vulnerability scans on main and the latest release,
+# long fuzzing, and release-ring promotion. Skips when nothing changed.
+name: nightly
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        ref: [main, latest-release]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Check out the latest release tag
+        if: matrix.ref == 'latest-release'
+        run: git checkout "$(git describe --tags --abbrev=0)"
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - name: govulncheck
+        id: vuln
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./... | tee vuln.txt
+      - name: Open an issue for a vulnerable release
+        if: failure() && matrix.ref == 'latest-release'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh issue create --label security --title "Vulnerability affects the latest release" --body-file vuln.txt
+
+  fuzz:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: go test ./internal/richtext -run '^$' -fuzz FuzzRender -fuzztime 10m
+
+  promote:
+    name: Promote releases through the rings
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: edge -> canary after 24 h healthy on staging; canary -> stable after 72 h on your own site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          CANARY_URL: ${{ vars.CANARY_URL }}
+        run: ./scripts/promote.sh

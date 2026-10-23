@@ -1,0 +1,10 @@
+{{define "content"}}
+<header class="page-head"><div><p class="muted"><a href="/admin/forms/">Form submissions</a> / <a href="/admin/forms/{{.Data.Form.Name}}/">{{.Data.Form.Label}}</a></p><h1>{{or .Data.Sub.Summary "Submission"}}</h1><p class="muted">Received {{date .Data.Sub.Created}}</p></div>
+  <form method="post" action="/admin/forms/{{.Data.Form.Name}}/{{.Data.Sub.ID}}/delete" data-confirm="Delete this submission? This can't be undone."><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn btn-ghost btn-danger-text">{{template "icon" "trash"}} Delete</button></form>
+</header>
+<section class="panel pad">
+  <dl class="submission">{{range .Data.Fields}}
+    <dt>{{.Label}}</dt><dd{{if .Long}} class="long"{{end}}>{{.Value}}</dd>{{end}}
+  </dl>
+</section>
+{{end}}

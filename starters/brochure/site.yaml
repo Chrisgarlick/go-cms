@@ -1,0 +1,8 @@
+name: __SITE_NAME__
+description: We help growing businesses build better digital products.
+locale: en-GB
+timezone: Europe/London
+date_format: 2 January 2006
+core:
+  channel: stable
+  min_version: __CMS_VERSION__

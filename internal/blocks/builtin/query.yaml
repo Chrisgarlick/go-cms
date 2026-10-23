@@ -1,0 +1,13 @@
+name: query
+label: Entry list
+icon: list-ordered
+category: dynamic
+help: Lists published entries. The page updates when matching entries change.
+fields:
+  - { name: heading, type: text }
+  - { name: content_type, type: text, required: true, label: Content type, placeholder: post }
+  - { name: taxonomy, type: text, placeholder: category }
+  - { name: term, type: text, label: Term slug }
+  - { name: limit, type: number, min: 1, max: 100, default: 6 }
+  - { name: order, type: select, options: [newest, oldest, title], default: newest }
+  - { name: layout, type: select, options: [list, cards], default: list }

@@ -1,0 +1,134 @@
+# Reusable workflow for site bundles (spec 2.6). A site repo's own workflow is
+# a few lines that call this one, so the pipeline lives here.
+#
+# Works for a single-site repo (defaults) and for a monorepo holding several
+# sites next to other code: pass `path` (the folder with site.yaml) and a
+# distinct `tag_prefix` per site. Bundle releases are never marked "Latest",
+# so another stream in the same repo (e.g. an app's v1.2.3) keeps that badge,
+# and servers pick bundles by prefix (`upgrade.site_tag_prefix`), never by
+# recency alone.
+#
+# Secrets: CMS_RELEASES_TOKEN (read-only, this repo's releases), and
+# COSIGN_PRIVATE_KEY / COSIGN_PASSWORD (the key the server's
+# upgrade.site_public_key, or upgrade.public_key, verifies).
+name: site
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: Folder that holds site.yaml
+        type: string
+        default: "."
+      tag_prefix:
+        description: Release tag prefix for this site's bundles (<prefix>-YYYYMMDD-HHMMSS-<sha7>)
+        type: string
+        default: site
+      publish:
+        description: Publish a release on main (false = build and upload the bundle as a workflow artefact only)
+        type: boolean
+        default: true
+      ref:
+        description: Commit to build (defaults to the triggering commit)
+        type: string
+        default: ""
+      cms_repo:
+        description: The cms core repository whose release is installed to check the site
+        type: string
+        default: Chrisgarlick/go-cms
+    secrets:
+      CMS_RELEASES_TOKEN: { required: true }
+      COSIGN_PRIVATE_KEY: { required: false }
+      COSIGN_PASSWORD: { required: false }
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ inputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.ref || github.sha }}" }
+      - name: Check the inputs
+        working-directory: .
+        env:
+          PREFIX: ${{ inputs.tag_prefix }}
+          SITE_PATH: ${{ inputs.path }}
+        run: |
+          # Prefixes are lower-case and must never look like a version tag,
+          # which belongs to the repo's app/core release stream.
+          echo "$PREFIX" | grep -Eq '^[a-z][a-z0-9-]{0,30}$' || { echo "::error::invalid tag_prefix '$PREFIX'"; exit 1; }
+          echo "$PREFIX" | grep -Eq '^v[0-9]' && { echo "::error::tag_prefix '$PREFIX' looks like a version"; exit 1; }
+          test -f "$SITE_PATH/site.yaml" || { echo "::error::no site.yaml in '$SITE_PATH'"; exit 1; }
+      - name: Install the cms version this site pins
+        env:
+          GH_TOKEN: ${{ secrets.CMS_RELEASES_TOKEN }}
+          CMS_REPO: ${{ inputs.cms_repo }}
+        run: |
+          want=$(sed -n 's/^ *min_version: *//p' site.yaml | tr -d '"')
+          tag=$(gh release list -R "$CMS_REPO" --limit 100 --json tagName,isPrerelease \
+            -q '[.[] | select(.isPrerelease|not) | select(.tagName|test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))][0].tagName')
+          echo "site needs >= $want; installing $tag"
+          cd "$RUNNER_TEMP"
+          gh release download "$tag" -R "$CMS_REPO" -p "cms_*_linux_amd64.tar.gz"
+          tar -xzf cms_*_linux_amd64.tar.gz cms && sudo install cms /usr/local/bin/cms
+          cms version
+      - uses: actions/cache@v4
+        with:
+          path: ~/.embedded-postgres-go
+          key: embedded-postgres-${{ runner.os }}-18
+      - run: cms theme validate .
+      - name: Render every page against the fixtures
+        run: cms check .
+
+  bundle:
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.ref || github.sha }}" }
+      - uses: sigstore/cosign-installer@v3
+      - name: Build, checksum and sign the site bundle
+        working-directory: ${{ inputs.path }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          PREFIX: ${{ inputs.tag_prefix }}
+          COMMIT: ${{ inputs.ref || github.sha }}
+        run: |
+          name=$(sed -n 's/^name: *//p' site.yaml | head -1 | sed 's/^"\(.*\)"$/\1/')
+          jq -n --arg prefix "$PREFIX" --arg site "$name" --arg commit "$COMMIT" --arg at "$(date -u +%FT%TZ)" \
+            '{prefix:$prefix, site:$site, commit:$commit, built_at:$at}' > bundle.json
+          out="$RUNNER_TEMP/bundle"; mkdir -p "$out"
+          tar --exclude=.git --exclude=.github --exclude=.cms --exclude=node_modules -czf "$out/site.tar.gz" .
+          rm bundle.json
+          cd "$out"
+          sha256sum site.tar.gz > checksums.txt
+          if [ -n "$COSIGN_PRIVATE_KEY" ]; then
+            cosign sign-blob --key env://COSIGN_PRIVATE_KEY --tlog-upload=false --yes --output-signature checksums.txt.sig checksums.txt
+          else
+            echo "::warning::COSIGN_PRIVATE_KEY is not set: the bundle is unsigned and servers will refuse it"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ inputs.tag_prefix }}
+          path: ${{ runner.temp }}/bundle/
+      - name: Publish the bundle
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREFIX: ${{ inputs.tag_prefix }}
+          COMMIT: ${{ inputs.ref || github.sha }}
+        working-directory: ${{ runner.temp }}/bundle
+        run: |
+          test -f checksums.txt.sig || { echo "::error::refusing to publish an unsigned bundle"; exit 1; }
+          tag="$PREFIX-$(date -u +%Y%m%d-%H%M%S)-${COMMIT::7}"
+          gh release create "$tag" site.tar.gz checksums.txt checksums.txt.sig \
+            -R "$GITHUB_REPOSITORY" --target "$COMMIT" --latest=false \
+            --title "$tag" --notes "Site bundle ($PREFIX) from $COMMIT"

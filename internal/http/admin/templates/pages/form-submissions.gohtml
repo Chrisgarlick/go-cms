@@ -1,0 +1,19 @@
+{{define "content"}}
+<header class="page-head"><div><p class="muted"><a href="/admin/forms/">Form submissions</a></p><h1>{{.Data.Form.Label}}</h1></div></header>
+<section class="panel">
+  {{if .Data.Submissions}}
+  <table class="table">
+    <thead><tr><th scope="col">From</th><th scope="col">Received</th><th scope="col"><span class="visually-hidden">Status</span></th></tr></thead>
+    <tbody>{{range .Data.Submissions}}<tr>
+      <td><a href="/admin/forms/{{.Form}}/{{.ID}}">{{or .Summary "Submission"}}</a></td>
+      <td class="muted">{{date .Created}}</td>
+      <td>{{if not .Read}}<span class="badge">New</span>{{end}}</td>
+    </tr>{{end}}</tbody>
+  </table>
+  {{if or .Data.More (gt .Data.Page 1)}}<nav class="row pad" aria-label="Pages">
+    {{if gt .Data.Page 1}}<a class="btn btn-ghost btn-sm" href="?page={{add .Data.Page -1}}">Newer</a>{{end}}
+    {{if .Data.More}}<a class="btn btn-ghost btn-sm" href="?page={{add .Data.Page 1}}">Older</a>{{end}}
+  </nav>{{end}}
+  {{else}}<p class="muted pad">Nothing has been sent through this form yet.</p>{{end}}
+</section>
+{{end}}

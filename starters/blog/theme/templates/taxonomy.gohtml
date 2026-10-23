@@ -1,0 +1,13 @@
+{{define "main"}}
+<div class="wrap">
+  <header class="page-header">
+    <p class="kicker">{{.Taxonomy.Label.Singular}}</p>
+    <h1>{{.Term.Name}}</h1>
+    {{with .Term.Description}}<p class="page-lede">{{.}}</p>{{end}}
+  </header>
+  {{if .Entries}}
+  <div class="post-rows">{{range .Entries}}{{template "partials/post-row" .}}{{end}}</div>
+  {{template "partials/pagination" .}}
+  {{else}}<p class="empty">Nothing published here yet.</p>{{end}}
+</div>
+{{end}}

@@ -1,0 +1,9 @@
+name: __SITE_NAME__
+description: Writing about the things I'm building and learning.
+locale: en-GB
+timezone: Europe/London
+date_format: 2 January 2006
+per_page: 12
+core:
+  channel: stable
+  min_version: __CMS_VERSION__

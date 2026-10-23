@@ -1,0 +1,130 @@
+# Every pull request and push to main (spec 9.2). Actions are pinned to
+# commit digests by Renovate (helpers:pinGitHubActionDigests).
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  GOFLAGS: -mod=readonly
+
+jobs:
+  generated:
+    name: Generated code is current
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: make check-generated
+
+  lint:
+    name: Static checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: go vet ./...
+      - run: go mod verify
+      - uses: golangci/golangci-lint-action@v8
+        with: { version: latest }
+      - name: govulncheck (source mode, the authoritative vulnerability gate)
+        uses: golang/govulncheck-action@v1
+        with: { go-version-file: go.mod, go-package: ./... }
+      - name: Licence check (flags AGPL/GPL dependencies)
+        run: |
+          go install github.com/google/go-licenses@latest
+          go-licenses check ./... --disallowed_types=forbidden,restricted
+
+  test:
+    name: Tests (unit + integration, real Postgres)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.embedded-postgres-go
+          key: embedded-postgres-${{ runner.os }}-18
+      - run: go test -race -count=1 -coverprofile=cover.out ./...
+      - run: go tool cover -func=cover.out | tail -1
+      - name: Short fuzz runs
+        run: go test ./internal/richtext -run '^$' -fuzz FuzzRender -fuzztime 30s
+
+  migrations:
+    name: Migration safety
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Lint new migrations for locking operations
+        uses: sbdchd/squawk-action@v2
+        with:
+          pattern: migrations/*.sql
+          version: latest
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - name: N-1 compatibility (previous release's tests on this schema)
+        run: ./scripts/n1-compat.sh
+
+  starters:
+    name: Starters generate, validate and render
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.embedded-postgres-go
+          key: embedded-postgres-${{ runner.os }}-18
+      - run: make build
+      - run: |
+          for s in blog brochure blank; do
+            ./bin/cms new "/tmp/site-$s" --starter "$s" --git=false -q
+            ./bin/cms theme validate "/tmp/site-$s"
+            ./bin/cms check "/tmp/site-$s"
+          done
+
+  e2e:
+    name: Browser tests (admin, CSP, accessibility)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.embedded-postgres-go
+          key: embedded-postgres-${{ runner.os }}-18
+      - run: make build
+      - run: cd e2e && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: ./scripts/e2e.sh
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: e2e-report, path: e2e/test-results }
+
+  budgets:
+    name: Memory and latency budgets
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.embedded-postgres-go
+          key: embedded-postgres-${{ runner.os }}-18
+      - uses: grafana/setup-k6-action@v1
+      - run: make build && ./scripts/budget.sh

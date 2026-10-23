@@ -1,0 +1,56 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Your account</h1><p class="muted">{{.Data.User.Email}} · {{title .Data.User.Role}}</p></div></header>
+<div class="grid-2">
+  <form method="post" action="/admin/account" class="panel pad stack">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="profile">
+    <h2>Profile</h2>
+    <label class="field"><span class="label">Display name</span><input name="name" value="{{.Data.User.DisplayName}}" maxlength="100"><span class="hint">Shown as the author of your posts.</span></label>
+    <label class="field"><span class="label">Bio</span><textarea name="bio" rows="3" maxlength="2000">{{.Data.User.Bio}}</textarea></label>
+    <div class="row"><button class="btn btn-primary" type="submit">Save profile</button></div>
+  </form>
+  <div class="stack">
+    <form method="post" action="/admin/account" class="panel pad stack">
+      <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="password">
+      <h2>Password</h2>
+      <label class="field"><span class="label">New password</span><input type="password" name="password" autocomplete="new-password" minlength="12" required></label>
+      <div class="row"><button class="btn" type="submit">Change password</button><span class="hint">Signs out your other devices.</span></div>
+    </form>
+    <section class="panel pad stack">
+      <h2>Two-factor authentication</h2>
+      <p class="muted">{{if .Data.User.TotpConfirmed}}On. {{.Data.Recovery}} recovery code{{if ne .Data.Recovery 1}}s{{end}} left.{{else}}Not set up.{{end}}</p>
+      <div class="row"><a class="btn" href="/admin/enroll">{{if .Data.User.TotpConfirmed}}Move to a new device{{else}}Set up now{{end}}</a></div>
+    </section>
+    <section class="panel pad stack">
+      <h2>Passkeys</h2>
+      <p class="muted">Sign in with Touch ID, Face ID, Windows Hello or a security key instead of typing a code.</p>
+      {{if .Data.Passkeys}}<ul class="list">{{range .Data.Passkeys}}<li><span class="list-link"><span class="list-title">{{.Name}}</span>
+        <span class="list-meta">Added {{dateOnly .Created}}{{if .LastUsed}} · used {{ago (deref .LastUsed)}}{{end}}</span></span>
+        <form method="post" action="/admin/account/passkeys/delete" data-confirm="Remove this passkey?"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><button class="btn btn-ghost btn-sm btn-danger-text">Remove</button></form></li>{{end}}</ul>{{end}}
+      <div class="row"><button type="button" class="btn" data-passkey-register>{{template "icon" "key"}} Add a passkey</button></div>
+      <p class="error-text" data-passkey-error role="alert"></p>
+    </section>
+  </div>
+</div>
+<section class="panel">
+  <header class="panel-head"><h2>Signed-in devices</h2>
+    <form method="post" action="/admin/account"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="signout-others"><button class="btn btn-ghost btn-sm">Sign out everywhere else</button></form></header>
+  <table class="table"><thead><tr><th scope="col">Device</th><th scope="col">IP</th><th scope="col">Last active</th></tr></thead>
+  <tbody>{{range .Data.Sessions}}<tr><td>{{or .UserAgent "Unknown"}}{{if eq (printf "%x" .IDSha256) (printf "%x" $.Data.Current)}} <span class="badge badge-published">This device</span>{{end}}</td>
+    <td class="muted cell-mono">{{with .Ip}}{{.}}{{end}}</td><td class="muted">{{ago .LastSeenAt}}</td></tr>{{end}}</tbody></table>
+</section>
+{{if .Data.CanTokens}}
+<section class="panel">
+  <header class="panel-head"><h2>API tokens</h2><span class="muted">For scripts and integrations. Tokens act with your permissions.</span></header>
+  {{with .Data.NewToken}}<div class="alert alert-info pad">{{template "icon" "key"}}<div><strong>Copy this token now. It won't be shown again.</strong><input class="copy-input" readonly value="{{.}}" data-select></div></div>{{end}}
+  {{if .Data.Tokens}}<table class="table"><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Expires</th><th scope="col">Last used</th><th></th></tr></thead>
+  <tbody>{{range .Data.Tokens}}<tr><td>{{.Name}}</td><td>{{title .Role}}</td><td class="muted">{{dateOnly .ExpiresAt}}</td><td class="muted">{{if .LastUsedAt}}{{ago (deref .LastUsedAt)}}{{else}}Never{{end}}</td>
+    <td class="cell-actions"><form method="post" action="/admin/account"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="revoke-token"><input type="hidden" name="id" value="{{.ID}}"><button class="btn btn-ghost btn-sm btn-danger-text">Revoke</button></form></td></tr>{{end}}</tbody></table>{{end}}
+  <form method="post" action="/admin/account" class="row pad">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="token">
+    <label class="field grow"><span class="label">Name</span><input name="name" required placeholder="e.g. deploy script"></label>
+    <label class="field"><span class="label">Expires in</span><select name="days"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="365">1 year</option></select></label>
+    <button class="btn" type="submit">Create token</button>
+  </form>
+</section>
+{{end}}
+{{end}}

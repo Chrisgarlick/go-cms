@@ -1,0 +1,9 @@
+/bin/
+/dist/
+/.dev-site/
+node_modules/
+/e2e/test-results/
+/e2e/playwright-report/
+*.test
+*.out
+.DS_Store

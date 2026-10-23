@@ -1,0 +1,12 @@
+{{define "main"}}
+<div class="wrap">
+  <header class="archive-header">
+    <h1>Search</h1>
+    {{template "partials/search-form" .}}
+  </header>
+  {{if .SearchQuery}}
+    <p class="search-summary" role="status">{{.Total}} {{plural .Total "result" "results"}} for “{{.SearchQuery}}”</p>
+    {{if .Entries}}<div class="cards">{{range .Entries}}{{template "partials/entry-card" .}}{{end}}</div>{{template "partials/pagination" .}}{{end}}
+  {{end}}
+</div>
+{{end}}

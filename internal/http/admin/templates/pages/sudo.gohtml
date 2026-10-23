@@ -1,0 +1,14 @@
+{{define "content"}}
+<h1 class="auth-title">Confirm it's you</h1>
+<p class="muted">This action changes security settings, so we need to check it's really you. This lasts 10 minutes.</p>
+<form method="post" action="/admin/sudo" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="next" value="{{.Data.Next}}">
+  <label class="field"><span class="label">Authenticator code</span>
+    <input name="code" inputmode="numeric" maxlength="7" autocomplete="one-time-code" class="code-input" autofocus></label>
+  <p class="or"><span>or</span></p>
+  <label class="field"><span class="label">Password</span>
+    <input type="password" name="password" autocomplete="current-password"></label>
+  <button class="btn btn-primary btn-block" type="submit">Confirm</button>
+</form>
+<p class="auth-alt"><a href="{{.Data.Next}}">Cancel</a></p>
+{{end}}

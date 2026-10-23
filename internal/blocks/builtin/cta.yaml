@@ -1,0 +1,8 @@
+name: cta
+label: Call to action
+icon: megaphone
+category: layout
+fields:
+  - { name: heading, type: text, required: true, searchable: true }
+  - { name: text, type: textarea, searchable: true }
+  - { name: link, type: link, required: true }

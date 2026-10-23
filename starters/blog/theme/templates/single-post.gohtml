@@ -1,0 +1,39 @@
+{{define "main"}}
+<article class="post">
+  <header class="post-header wrap-narrow">
+    {{with .Entry.Terms "category"}}<p class="kicker">{{range $i, $t := .}}{{if $i}} · {{end}}<a href="{{$t.URL}}">{{$t.Name}}</a>{{end}}</p>{{end}}
+    <h1 class="post-title">{{.Entry.Title}}</h1>
+    {{with .Entry.Meta.Excerpt}}<p class="post-lede">{{.}}</p>{{end}}
+    <p class="post-meta">
+      {{with .Entry.AuthorName}}<span class="post-author">{{.}}</span><span aria-hidden="true"> · </span>{{end}}
+      <time datetime="{{isodate .Entry.Date}}">{{date .Entry.Date}}</time>
+      <span aria-hidden="true"> · </span>{{.Entry.ReadingTime}} min read
+      {{if .Entry.HasUpdate}}<span aria-hidden="true"> · </span>Updated <time datetime="{{isodate .Entry.Updated}}">{{date .Entry.Updated "2 Jan 2006"}}</time>{{end}}
+    </p>
+  </header>
+  {{with .Entry.Image "xl" "loading" "eager" "sizes" "(min-width: 64rem) 60rem, 100vw"}}<figure class="post-cover wrap">{{.}}</figure>{{end}}
+  <div class="post-body wrap-narrow">{{.Content}}</div>
+  <footer class="post-footer wrap-narrow">
+    {{with .Entry.Terms "tag"}}<ul class="tags" aria-label="Tags">{{range .}}<li><a href="{{.URL}}">#{{.Name}}</a></li>{{end}}</ul>{{end}}
+    {{if .Entry.AuthorBio}}
+    <aside class="author-box">
+      <p class="author-name">Written by {{.Entry.AuthorName}}</p>
+      <p>{{.Entry.AuthorBio}}</p>
+    </aside>
+    {{end}}
+    {{$prev := .Prev}}{{$next := .Next}}
+    {{if or $prev $next}}
+    <nav class="post-nav" aria-label="More posts">
+      {{with $prev}}<a class="post-nav-prev" href="{{.URL}}"><span>Previous</span>{{.Title}}</a>{{end}}
+      {{with $next}}<a class="post-nav-next" href="{{.URL}}"><span>Next</span>{{.Title}}</a>{{end}}
+    </nav>
+    {{end}}
+  </footer>
+</article>
+{{with .Related .Entry 3}}
+<section class="related wrap" aria-labelledby="related">
+  <h2 id="related" class="section-title">Keep reading</h2>
+  <div class="post-rows">{{range .}}{{template "partials/post-row" .}}{{end}}</div>
+</section>
+{{end}}
+{{end}}

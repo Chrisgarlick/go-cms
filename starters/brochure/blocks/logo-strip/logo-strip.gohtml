@@ -1,0 +1,6 @@
+<section class="logos wrap" aria-label="{{default "Clients" .Data.heading}}">
+  {{with .Data.heading}}<p class="logos-heading">{{.}}</p>{{end}}
+  <ul class="logos-list">
+    {{range .Data.logos}}<li>{{if .logo}}{{$.Page.Img .logo "small" "alt" (str .name)}}{{else}}<span class="logo-text">{{.name}}</span>{{end}}</li>{{end}}
+  </ul>
+</section>

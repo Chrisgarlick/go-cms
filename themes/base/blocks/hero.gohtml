@@ -1,0 +1,9 @@
+<section class="hero hero-{{default "light" .Data.style}}">
+  {{if and (eq (str .Data.style) "image") .Data.image}}<div class="hero-media">{{.Page.Img .Data.image "xl" "loading" "eager" "sizes" "100vw" "alt" ""}}</div>{{end}}
+  <div class="hero-inner">
+    <h2 class="hero-heading">{{.Data.heading}}</h2>
+    {{with .Data.subheading}}<p class="hero-sub">{{.}}</p>{{end}}
+    {{with .Data.cta}}<p class="buttons"><a class="button button-primary" href="{{safeURL (str .url)}}">{{default "Get started" .label}}</a></p>{{end}}
+  </div>
+  {{if and (ne (str .Data.style) "image") .Data.image}}<div class="hero-side">{{.Page.Img .Data.image "large" "loading" "eager"}}</div>{{end}}
+</section>

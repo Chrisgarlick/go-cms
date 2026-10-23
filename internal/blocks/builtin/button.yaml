@@ -1,0 +1,7 @@
+name: button
+label: Button
+icon: button
+category: layout
+fields:
+  - { name: link, type: link, required: true }
+  - { name: style, type: select, options: [primary, secondary], default: primary }

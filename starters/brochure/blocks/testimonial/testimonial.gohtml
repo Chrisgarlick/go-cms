@@ -1,0 +1,7 @@
+<figure class="testimonial wrap-narrow">
+  <blockquote><p>“{{.Data.quote}}”</p></blockquote>
+  <figcaption>
+    {{with .Data.photo}}<span class="testimonial-photo">{{$.Page.Img . "thumb" "alt" ""}}</span>{{end}}
+    <span><strong>{{.Data.name}}</strong>{{with .Data.role}}<br><span class="muted">{{.}}</span>{{end}}</span>
+  </figcaption>
+</figure>

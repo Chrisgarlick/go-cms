@@ -1,0 +1,54 @@
+{{define "content"}}
+{{$t := .Data.Type}}
+<header class="page-head">
+  <div><h1>{{$t.Label.Plural}}</h1><p class="muted">{{.Data.Total}} {{if eq .Data.Total 1}}entry{{else}}entries{{end}}</p></div>
+  <form method="post" action="/admin/content/{{$t.Name}}/new" class="head-actions">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <button class="btn btn-primary" type="submit">{{template "icon" "plus"}} New {{lower $t.Label.Singular}}</button>
+  </form>
+</header>
+<div class="toolbar">
+  <nav class="tabs" aria-label="Filter by status">
+    <a class="tab{{if eq .Data.Status ""}} is-active{{end}}" href="?">All <span>{{index .Data.Counts "all"}}</span></a>
+    <a class="tab{{if eq .Data.Status "published"}} is-active{{end}}" href="?status=published">Published <span>{{index .Data.Counts "published"}}</span></a>
+    <a class="tab{{if eq .Data.Status "draft"}} is-active{{end}}" href="?status=draft">Drafts <span>{{index .Data.Counts "draft"}}</span></a>
+    <a class="tab{{if eq .Data.Status "scheduled"}} is-active{{end}}" href="?status=scheduled">Scheduled <span>{{index .Data.Counts "scheduled"}}</span></a>
+    <a class="tab{{if eq .Data.Status "trashed"}} is-active{{end}}" href="?status=trashed">Trash <span>{{index .Data.Counts "trashed"}}</span></a>
+  </nav>
+  <form class="search" role="search"><input type="hidden" name="status" value="{{.Data.Status}}">
+    <label class="visually-hidden" for="q">Search {{lower $t.Label.Plural}}</label>
+    <input id="q" type="search" name="q" value="{{.Data.Query}}" placeholder="Search titles…"></form>
+</div>
+{{if .Data.Rows}}
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Author</th><th scope="col">{{if eq .Data.Status "scheduled"}}Scheduled{{else}}Updated{{end}}</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+  <tbody>
+  {{range .Data.Rows}}
+  <tr>
+    <td class="cell-title"><a href="/admin/entries/{{.ID}}">{{or .DraftTitle "Untitled"}}</a>{{if .ParentID}}<span class="muted"> · child page</span>{{end}}<span class="cell-sub">/{{.DraftSlug}}</span></td>
+    <td>{{if and .PublishedVersion (ne (deref2 .PublishedVersion) .Version) (ne .Status "trashed")}}{{template "status" "pending"}}{{else}}{{template "status" .Status}}{{end}}</td>
+    <td class="muted">{{.AuthorName}}</td>
+    <td class="muted">{{if .ScheduledAt}}{{date (deref .ScheduledAt)}}{{else}}{{ago .UpdatedAt}}{{end}}</td>
+    <td class="cell-actions">
+      {{if eq .Status "trashed"}}
+      <form method="post" action="/admin/entries/{{.ID}}/restore"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm">Restore</button></form>
+      <form method="post" action="/admin/entries/{{.ID}}/delete" data-confirm="Delete this entry permanently? This cannot be undone."><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm btn-danger-text">Delete forever</button></form>
+      {{else}}
+      <a class="btn btn-ghost btn-sm" href="/admin/entries/{{.ID}}">Edit</a>
+      {{end}}
+    </td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" (printf "status=%s&q=%s&" .Data.Status .Data.Query))}}
+{{else}}
+<div class="empty-state">
+  {{template "icon" (or $t.Icon "file")}}
+  <h2>{{if .Data.Query}}No {{lower $t.Label.Plural}} match “{{.Data.Query}}”{{else if eq .Data.Status "trashed"}}The trash is empty{{else}}No {{lower $t.Label.Plural}} yet{{end}}</h2>
+  {{if not .Data.Query}}<form method="post" action="/admin/content/{{$t.Name}}/new"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn btn-primary">{{template "icon" "plus"}} Create the first one</button></form>{{end}}
+</div>
+{{end}}
+{{end}}

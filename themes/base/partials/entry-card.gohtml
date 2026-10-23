@@ -1,0 +1,8 @@
+<article class="card">
+  {{with .Image "medium" "sizes" "(min-width: 40rem) 20rem, 100vw"}}<a class="card-image" href="{{$.URL}}" tabindex="-1" aria-hidden="true">{{.}}</a>{{end}}
+  <div class="card-body">
+    <h2 class="card-title"><a href="{{.URL}}">{{.Title}}</a></h2>
+    {{if not .Date.IsZero}}<p class="card-meta"><time datetime="{{isodate .Date}}">{{date .Date}}</time></p>{{end}}
+    {{with .Excerpt}}<p class="card-excerpt">{{.}}</p>{{end}}
+  </div>
+</article>

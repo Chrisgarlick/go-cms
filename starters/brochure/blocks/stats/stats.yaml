@@ -1,0 +1,13 @@
+name: stats
+label: Stats
+icon: activity
+category: layout
+fields:
+  - { name: heading, type: text }
+  - name: items
+    type: repeater
+    min_items: 1
+    max_items: 4
+    fields:
+      - { name: value, type: text, required: true, placeholder: "120+" }
+      - { name: label, type: text, required: true, placeholder: "projects delivered" }

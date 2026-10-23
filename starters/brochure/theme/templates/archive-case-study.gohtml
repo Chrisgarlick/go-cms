@@ -1,0 +1,12 @@
+{{define "main"}}
+<header class="page-hero wrap"><h1>Our work</h1><p class="lede">A selection of projects we're proud of.</p></header>
+<div class="wrap work-grid">
+  {{range .Entries}}
+  <a class="work-card" href="{{.URL}}">
+    <span class="work-image">{{with .Image "card"}}{{.}}{{else}}<span class="work-placeholder"></span>{{end}}</span>
+    <span class="work-client">{{.Field "client"}}</span><h2>{{.Title}}</h2>
+  </a>
+  {{end}}
+</div>
+{{template "partials/pagination" .}}
+{{end}}

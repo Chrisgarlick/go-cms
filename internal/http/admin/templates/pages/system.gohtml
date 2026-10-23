@@ -1,0 +1,19 @@
+{{define "content"}}
+<header class="page-head"><div><h1>System</h1><p class="muted">cms {{.Data.Version.Version}} · {{.Data.Version.GoVersion}} · up {{.Data.Uptime}}</p></div>
+  {{if can .Session "system.manage"}}<form method="post" action="/admin/system/rebuild"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn">{{template "icon" "refresh"}} Rebuild the site</button></form>{{end}}</header>
+<div class="grid-2">
+  <section class="panel"><header class="panel-head"><h2>Build</h2></header>
+    <dl class="dl pad"><dt>Version</dt><dd>{{.Data.Version.Version}}</dd><dt>Commit</dt><dd class="cell-mono">{{or .Data.Version.Commit "—"}}</dd>
+    <dt>Platform</dt><dd>{{.Data.Version.Platform}}</dd><dt>Site bundle</dt><dd class="cell-mono">{{.Data.Bundle}}</dd><dt>Theme</dt><dd class="cell-mono">{{.Data.Theme}}</dd></dl></section>
+  <section class="panel"><header class="panel-head"><h2>Background jobs (7 days)</h2></header>
+    {{if .Data.Jobs}}<table class="table"><thead><tr><th scope="col">Job</th><th scope="col">State</th><th scope="col">Count</th></tr></thead>
+    <tbody>{{range .Data.Jobs}}<tr><td class="cell-mono">{{.Kind}}</td><td>{{.State}}</td><td>{{.Count}}</td></tr>{{end}}</tbody></table>{{else}}<p class="muted pad">No jobs yet.</p>{{end}}</section>
+</div>
+{{if .Data.Audit}}
+<section class="panel">
+  <header class="panel-head"><h2>Audit log</h2><span class="{{if .Data.Chain.OK}}text-ok{{else}}text-danger{{end}}">{{if .Data.Chain.OK}}Chain verified ({{.Data.Chain.Rows}} rows){{else}}Chain broken at row {{.Data.Chain.BrokenAt}}{{end}}</span></header>
+  <table class="table"><thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">Action</th><th scope="col">Resource</th></tr></thead>
+  <tbody>{{range .Data.Audit}}<tr><td class="muted">{{date .CreatedAt}}</td><td>{{.ActorLabel}}</td><td class="cell-mono">{{.Action}}</td><td class="cell-mono muted">{{.ResourceType}}:{{printf "%.8s" .ResourceID}}</td></tr>{{end}}</tbody></table>
+</section>
+{{end}}
+{{end}}

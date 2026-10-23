@@ -1,0 +1,7 @@
+name: blog
+extends: base
+menus:
+  primary: Main navigation
+  footer: Footer links
+image_sizes:
+  card: { width: 720, height: 450, fit: cover }

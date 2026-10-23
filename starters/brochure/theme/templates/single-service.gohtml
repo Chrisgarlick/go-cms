@@ -1,0 +1,13 @@
+{{define "main"}}
+<article>
+  <header class="page-hero wrap">
+    <p class="kicker"><a href="/services/">Services</a></p>
+    <h1>{{.Entry.Title}}</h1>
+    <p class="lede">{{default .Entry.Excerpt (.Entry.Field "summary")}}</p>
+  </header>
+  {{with .Entry.Image "xl" "loading" "eager"}}<figure class="cover wrap">{{.}}</figure>{{end}}
+  <div class="prose-wrap wrap-narrow">{{.Content}}</div>
+  <section class="cta-band"><div class="wrap cta-inner"><h2>Interested in {{lower .Entry.Title}}?</h2>
+    {{with .Option "company" "email"}}<a class="button" href="mailto:{{.}}">Talk to us</a>{{end}}</div></section>
+</article>
+{{end}}

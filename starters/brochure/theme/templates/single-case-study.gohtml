@@ -1,0 +1,13 @@
+{{define "main"}}
+<article>
+  <header class="page-hero wrap">
+    <p class="kicker"><a href="/work/">Case study</a>{{with .Entry.Field "client"}} · {{.}}{{end}}{{with .Entry.Field "year"}} · {{.}}{{end}}</p>
+    <h1>{{.Entry.Title}}</h1>
+    {{with .Entry.Excerpt}}<p class="lede">{{.}}</p>{{end}}
+  </header>
+  {{with .Entry.Image "xl" "loading" "eager"}}<figure class="cover wrap">{{.}}</figure>{{end}}
+  {{with .Entry.Field "results"}}<dl class="results wrap">{{range .}}<div><dd>{{.value}}</dd><dt>{{.label}}</dt></div>{{end}}</dl>{{end}}
+  <div class="prose-wrap wrap-narrow">{{.Content}}</div>
+  {{with .Next}}<nav class="next-case wrap" aria-label="Next case study"><a href="{{.URL}}"><span>Next case study</span>{{.Title}}</a></nav>{{end}}
+</article>
+{{end}}

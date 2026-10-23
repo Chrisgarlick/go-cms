@@ -1,0 +1,7 @@
+name: callout
+label: Callout
+icon: info
+category: text
+fields:
+  - { name: tone, type: select, options: [note, tip, warning], default: note }
+  - { name: body, type: richtext, required: true, searchable: true }

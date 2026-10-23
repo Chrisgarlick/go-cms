@@ -1,0 +1,9 @@
+[Unit]
+Description=cms nightly backup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=cms
+Environment=CMS_CONFIG=/etc/cms/config.yaml
+ExecStart=/opt/cms/current/cms backup create --keep 14

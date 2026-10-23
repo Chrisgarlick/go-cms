@@ -1,0 +1,8 @@
+<div class="accordion">
+  {{range .Data.items}}
+  <details>
+    <summary>{{.question}}</summary>
+    <div class="prose">{{$.Page.RichText .answer}}</div>
+  </details>
+  {{end}}
+</div>

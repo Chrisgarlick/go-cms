@@ -1,0 +1,32 @@
+{{define "content"}}
+{{$tx := .Data.Taxonomy}}
+<header class="page-head"><div><h1>{{$tx.Label.Plural}}</h1><p class="muted">Used by {{range $i, $t := $tx.Types}}{{if $i}}, {{end}}{{$t}}{{end}}</p></div></header>
+<div class="grid-sidebar">
+  <form method="post" action="/admin/terms/{{$tx.Name}}/" class="panel stack pad">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <h2>{{if .Data.Edit}}Edit {{lower $tx.Label.Singular}}{{else}}Add {{lower $tx.Label.Singular}}{{end}}</h2>
+    {{with .Data.Edit}}<input type="hidden" name="id" value="{{.ID}}">{{end}}
+    <label class="field"><span class="label">Name</span><input name="name" required maxlength="200" value="{{with .Data.Edit}}{{.Name}}{{end}}"></label>
+    <label class="field"><span class="label">Slug</span><input name="slug" placeholder="Generated from the name" value="{{with .Data.Edit}}{{.Slug}}{{end}}"></label>
+    {{if $tx.Hierarchical}}
+    <label class="field"><span class="label">Parent</span><select name="parent_id"><option value="">None</option>
+      {{$parent := ""}}{{with .Data.Edit}}{{$parent = uuidStr .ParentID}}{{end}}
+      {{range .Data.Terms}}<option value="{{.ID}}"{{if eq (uuidStr .ID) $parent}} selected{{end}}>{{.Name}}</option>{{end}}</select></label>
+    {{end}}
+    <label class="field"><span class="label">Description</span><textarea name="description" rows="3">{{with .Data.Edit}}{{.Description}}{{end}}</textarea></label>
+    <div class="row"><button class="btn btn-primary" type="submit">{{if .Data.Edit}}Save{{else}}Add{{end}}</button>{{if .Data.Edit}}<a class="btn btn-ghost" href="/admin/terms/{{$tx.Name}}/">Cancel</a>{{end}}</div>
+  </form>
+  <div class="panel">
+    {{if .Data.Terms}}
+    <table class="table">
+      <thead><tr><th scope="col">Name</th><th scope="col">Slug</th><th scope="col">Published</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>{{range .Data.Terms}}<tr>
+        <td class="cell-title"><a href="?edit={{.ID}}">{{.Name}}</a></td><td class="muted">{{.Slug}}</td><td>{{.PublishedCount}}</td>
+        <td class="cell-actions"><form method="post" action="/admin/terms/{{$tx.Name}}/{{.ID}}/delete" data-confirm="Delete “{{.Name}}”? Entries keep their other {{lower $tx.Label.Plural}}.">
+          <input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm btn-danger-text">Delete</button></form></td>
+      </tr>{{end}}</tbody>
+    </table>
+    {{else}}<p class="muted pad">No {{lower $tx.Label.Plural}} yet.</p>{{end}}
+  </div>
+</div>
+{{end}}

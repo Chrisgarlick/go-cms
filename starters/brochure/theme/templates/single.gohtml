@@ -1,0 +1,6 @@
+{{define "main"}}
+<article class="page">
+  {{if ne .Path "/"}}<header class="page-hero wrap"><h1>{{.Entry.Title}}</h1>{{with .Entry.Meta.Excerpt}}<p class="lede">{{.}}</p>{{end}}</header>{{end}}
+  <div class="page-blocks">{{.Content}}</div>
+</article>
+{{end}}

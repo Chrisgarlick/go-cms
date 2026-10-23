@@ -1,0 +1,26 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Settings</h1></div></header>
+<form method="post" action="/admin/settings/" class="settings stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <section class="panel pad stack">
+    <h2>Site</h2>
+    <label class="field"><span class="label">Site name</span><input name="name" value="{{.Data.Name}}" required></label>
+    <label class="field"><span class="label">Tagline</span><input name="tagline" value="{{.Data.Tagline}}" placeholder="A short description of the site"></label>
+  </section>
+  <section class="panel pad stack">
+    <h2>Home page</h2>
+    <label class="field"><span class="label">Show on the home page</span>
+      <select name="front_page"><option value="">The latest entries</option>
+        {{range .Data.Pages}}<option value="{{.ID}}"{{if eq .ID $.Data.FrontPage}} selected{{end}}>Page: {{.Label}}</option>{{end}}</select></label>
+    {{if .Data.Types}}<label class="field"><span class="label">Entries listed on the home page</span>
+      <select name="home_type"><option value="">Default</option>{{range .Data.Types}}<option value="{{.ID}}"{{if eq .ID $.Data.HomeType}} selected{{end}}>{{.Label}}</option>{{end}}</select></label>{{end}}
+  </section>
+  <section class="panel pad stack">
+    <h2>Search engines</h2>
+    <label class="field"><span class="label">Page title format</span><input name="title_format" value="{{.Data.TitleFormat}}"><span class="hint">Use {title} and {site}.</span></label>
+    <label class="check"><input type="checkbox" name="discourage"{{if .Data.Discourage}} checked{{end}}> Ask search engines not to index this site (staging sites)</label>
+    <label class="field"><span class="label">Extra robots.txt lines</span><textarea name="robots_extra" rows="3" class="mono">{{.Data.RobotsExtra}}</textarea></label>
+  </section>
+  <div class="row"><button class="btn btn-primary" type="submit">Save settings</button><span class="muted">Saving re-renders the whole site in the background.</span></div>
+</form>
+{{end}}

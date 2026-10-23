@@ -1,0 +1,8 @@
+{{define "content"}}
+<header class="page-head"><div><h1>Menus</h1><p class="muted">Menu locations are defined by the theme.</p></div></header>
+{{if .Data.Locations}}
+<ul class="cards-list">
+  {{range .Data.Locations}}<li><a class="card-link" href="/admin/menus/{{.Name}}"><span class="list-title">{{.Label}}</span><span class="list-meta">{{.Count}} top-level item{{if ne .Count 1}}s{{end}} · {{.Name}}</span></a></li>{{end}}
+</ul>
+{{else}}<div class="empty-state">{{template "icon" "menu"}}<h2>This theme has no menu locations</h2><p class="muted">Add <code>menus:</code> to <code>theme/theme.yaml</code>.</p></div>{{end}}
+{{end}}

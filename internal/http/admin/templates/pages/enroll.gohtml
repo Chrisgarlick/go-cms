@@ -1,0 +1,14 @@
+{{define "content"}}
+<h1 class="auth-title">Set up two-factor authentication</h1>
+<p class="muted">{{if .Data.Required}}Every account on this site uses two-factor authentication. {{end}}Scan the code with an authenticator app (1Password, Google Authenticator, Authy), then enter the 6-digit code it shows.</p>
+{{if .Data.QR}}<img class="qr" src="{{.Data.QR}}" alt="QR code for your authenticator app" width="198" height="198">{{end}}
+<details class="manual"><summary>Can't scan? Enter this key instead</summary><code class="secret">{{.Data.Secret}}</code></details>
+<form method="post" action="/admin/enroll" class="stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <input type="hidden" name="secret" value="{{.Data.Secret}}">
+  <input type="hidden" name="qr" value="{{.Data.QR}}">
+  <label class="field"><span class="label">Code from the app</span>
+    <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" class="code-input" required autofocus></label>
+  <button class="btn btn-primary btn-block" type="submit">Turn on two-factor authentication</button>
+</form>
+{{end}}

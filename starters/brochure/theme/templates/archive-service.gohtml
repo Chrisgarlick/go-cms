@@ -1,0 +1,11 @@
+{{define "main"}}
+<header class="page-hero wrap"><h1>Services</h1><p class="lede">{{.Site.Description}}</p></header>
+<div class="wrap service-grid">
+  {{range .Entries}}
+  <a class="service-card" href="{{.URL}}">
+    <span class="service-icon icon-{{default "strategy" (.Field "icon")}}" aria-hidden="true"></span>
+    <h2>{{.Title}}</h2><p>{{default .Excerpt (.Field "summary")}}</p><span class="more" aria-hidden="true">Learn more</span>
+  </a>
+  {{end}}
+</div>
+{{end}}

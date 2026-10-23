@@ -1,0 +1,6 @@
+name: team-grid
+label: Team
+icon: users
+category: dynamic
+fields:
+  - { name: heading, type: text, default: "The team" }

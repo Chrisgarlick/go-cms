@@ -1,0 +1,9 @@
+name: services-grid
+label: Services grid
+icon: grid
+category: dynamic
+help: Lists your services. Updates automatically when services change.
+fields:
+  - { name: heading, type: text, default: "What we do" }
+  - { name: intro, type: textarea }
+  - { name: limit, type: number, min: 1, max: 12, default: 6 }

@@ -1,0 +1,13 @@
+name: service
+label: { singular: Service, plural: Services }
+icon: grid
+url: /services/{slug}
+archive: /services
+supports: [title, slug, excerpt, featured_image, blocks, revisions, seo]
+blocks:
+  default: [rich-text]
+sort: { field: menu_order, order: asc }
+menu_position: 2
+fields:
+  - { name: icon, type: select, options: [strategy, design, engineering, growth, support], default: strategy, width: 50 }
+  - { name: summary, type: textarea, required: true, max_length: 240, help: "One or two sentences shown on cards." }

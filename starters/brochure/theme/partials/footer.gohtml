@@ -1,0 +1,22 @@
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <p class="footer-brand"><span class="logo-mark" aria-hidden="true"></span>{{.Site.Name}}</p>
+      {{with .Site.Description}}<p class="footer-text">{{.}}</p>{{end}}
+    </div>
+    <div>
+      <p class="footer-heading">Contact</p>
+      <ul class="footer-list">
+        {{with .Option "company" "email"}}<li><a href="mailto:{{.}}">{{.}}</a></li>{{end}}
+        {{with .Option "company" "phone"}}<li><a href="tel:{{.}}">{{.}}</a></li>{{end}}
+        {{with .Option "company" "address"}}<li>{{nl2br (str .)}}</li>{{end}}
+      </ul>
+    </div>
+    <div>
+      <p class="footer-heading">Explore</p>
+      {{with .Menu "footer"}}<ul class="footer-list">{{range .}}<li><a href="{{.URL}}">{{.Label}}</a></li>{{end}}</ul>{{end}}
+      {{with .Option "company" "social"}}<ul class="social">{{range .}}<li><a href="{{safeURL (str .url)}}" rel="noopener">{{.network}}</a></li>{{end}}</ul>{{end}}
+    </div>
+  </div>
+  <div class="wrap footer-bottom"><p>&copy; {{year .Now}} {{.Site.Name}}. All rights reserved.</p></div>
+</footer>

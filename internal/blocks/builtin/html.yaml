@@ -1,0 +1,7 @@
+name: html
+label: Custom HTML
+icon: code-xml
+category: advanced
+help: Sanitised HTML. Only owners can add or edit this block.
+fields:
+  - { name: html, type: html, required: true }

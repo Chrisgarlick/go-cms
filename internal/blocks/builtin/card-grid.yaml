@@ -1,0 +1,16 @@
+name: card-grid
+label: Card grid
+icon: grid
+category: layout
+fields:
+  - { name: heading, type: text }
+  - { name: columns, type: select, options: ["2", "3", "4"], default: "3" }
+  - name: cards
+    type: repeater
+    min_items: 1
+    max_items: 24
+    fields:
+      - { name: title, type: text, required: true, searchable: true }
+      - { name: text, type: textarea, searchable: true }
+      - { name: image, type: image }
+      - { name: link, type: link }

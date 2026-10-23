@@ -1,0 +1,13 @@
+entries:
+  - type: page
+    title: Home
+    slug: home
+    front_page: true
+    publish: true
+    body: |
+      # It works
+
+      This is your new site. Sign in at /admin/ to edit this page, or change the theme in `theme/`.
+menus:
+  primary:
+    - { label: Home, url: / }

@@ -1,0 +1,10 @@
+{{define "main"}}
+<article class="page">
+  <header class="page-header wrap-narrow">
+    <h1>{{.Entry.Title}}</h1>
+    {{with .Entry.Meta.Excerpt}}<p class="page-lede">{{.}}</p>{{end}}
+  </header>
+  {{with .Entry.Image "xl" "loading" "eager"}}<figure class="post-cover wrap">{{.}}</figure>{{end}}
+  <div class="post-body wrap-narrow">{{.Content}}</div>
+</article>
+{{end}}

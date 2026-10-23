@@ -1,0 +1,8 @@
+name: contact-details
+label: Contact details
+icon: mail
+category: dynamic
+help: Shows the email, phone and address from Company details.
+fields:
+  - { name: heading, type: text, default: "Get in touch" }
+  - { name: text, type: textarea }

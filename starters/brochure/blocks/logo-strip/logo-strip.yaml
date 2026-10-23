@@ -1,0 +1,12 @@
+name: logo-strip
+label: Logo strip
+icon: gallery
+category: layout
+fields:
+  - { name: heading, type: text, default: "Trusted by teams at" }
+  - name: logos
+    type: repeater
+    max_items: 12
+    fields:
+      - { name: name, type: text, required: true }
+      - { name: logo, type: image }

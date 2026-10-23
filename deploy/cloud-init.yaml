@@ -1,0 +1,79 @@
+#cloud-config
+# Provisions a fresh Ubuntu 24.04 server for one cms site (spec 9.7).
+# Fill in the variables below, then pass this file as user data.
+#
+#   SITE_DOMAIN       example.com
+#   OWNER_EMAIL       you@example.com
+#   ACME_EMAIL        you@example.com
+#   RELEASES_TOKEN    read-only fine-grained token for the private cms repo
+#   CMS_VERSION       e.g. 1.0.0
+#   SITE_BUNDLE_URL   URL of the site bundle release (tar.gz)
+write_files:
+  - path: /etc/cms/env.sh
+    permissions: "0600"
+    content: |
+      SITE_DOMAIN=example.com
+      OWNER_EMAIL=you@example.com
+      ACME_EMAIL=you@example.com
+      RELEASES_TOKEN=github_pat_xxx
+      CMS_VERSION=1.0.0
+      CMS_REPO=Chrisgarlick/go-cms
+      SITE_REPO=OWNER/site-example
+      CHANNEL=stable
+      SITE_BUNDLE_URL=
+  - path: /opt/cms/cosign.pub
+    permissions: "0644"
+    content: |
+      -----BEGIN PUBLIC KEY-----
+      paste the public half of your cosign key (cosign.pub) here
+      -----END PUBLIC KEY-----
+package_update: true
+package_upgrade: true
+packages:
+  - postgresql
+  - postgresql-contrib
+  - libvips-tools
+  - curl
+  - jq
+  - unattended-upgrades
+  - debian-keyring
+  - debian-archive-keyring
+  - apt-transport-https
+runcmd:
+  - set -euo pipefail
+  - . /etc/cms/env.sh
+  # Caddy
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+  - apt-get update && apt-get install -y caddy
+  # cosign, for verifying releases
+  - curl -fsSL -o /usr/local/bin/cosign "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-$(dpkg --print-architecture)" && chmod +x /usr/local/bin/cosign
+  # System user and directories
+  - useradd --system --home /var/lib/cms --shell /usr/sbin/nologin cms || true
+  - install -d -o cms -g cms -m 0750 /var/lib/cms /var/lib/cms/public /var/lib/cms/media /var/lib/cms/tmp /var/lib/cms/backups
+  - install -d -m 0755 /opt/cms/releases /opt/cms/site/releases /etc/caddy/sites
+  - echo "$RELEASES_TOKEN" > /etc/cms/releases-token && chmod 0400 /etc/cms/releases-token
+  # Download and verify the cms release
+  - cd /tmp && curl -fsSL -H "Authorization: Bearer $RELEASES_TOKEN" -H "Accept: application/octet-stream" -o cms.tar.gz "$(curl -fsSL -H "Authorization: Bearer $RELEASES_TOKEN" https://api.github.com/repos/$CMS_REPO/releases/tags/v$CMS_VERSION | jq -r ".assets[] | select(.name==\"cms_${CMS_VERSION}_linux_$(dpkg --print-architecture).tar.gz\") | .url")"
+  - install -d /opt/cms/releases/$CMS_VERSION && tar -xzf /tmp/cms.tar.gz -C /opt/cms/releases/$CMS_VERSION
+  - ln -sfn /opt/cms/releases/$CMS_VERSION /opt/cms/blue && ln -sfn /opt/cms/blue /opt/cms/current && echo blue > /opt/cms/active-colour
+  - cp /opt/cms/current/deploy/deploy.sh /opt/cms/deploy.sh && chmod 0755 /opt/cms/deploy.sh
+  - cp /opt/cms/current/deploy/*.service /opt/cms/current/deploy/*.timer /etc/systemd/system/
+  - cp /opt/cms/current/deploy/Caddyfile /etc/caddy/Caddyfile
+  - echo "PORT=8081" > /etc/cms/blue.env && echo "PORT=8082" > /etc/cms/green.env
+  # Site bundle
+  - install -d /opt/cms/site/releases/initial && curl -fsSL -H "Authorization: Bearer $RELEASES_TOKEN" -H "Accept: application/octet-stream" "$SITE_BUNDLE_URL" | tar -xz -C /opt/cms/site/releases/initial
+  - ln -sfn /opt/cms/site/releases/initial /opt/cms/site/current
+  # Database, keys, config, first owner
+  - systemctl enable --now postgresql
+  - sudo -u postgres psql -c "ALTER SYSTEM SET shared_buffers = '128MB'" -c "ALTER SYSTEM SET work_mem = '4MB'" -c "ALTER SYSTEM SET max_connections = 30"
+  - systemctl restart postgresql
+  - /opt/cms/current/cms install --site /opt/cms/site/current --domain "$SITE_DOMAIN" --owner-email "$OWNER_EMAIL" --db-super-url "postgres:///postgres?host=/var/run/postgresql&user=postgres" --upgrade-feed "https://api.github.com/repos/$CMS_REPO/releases" --site-feed "https://api.github.com/repos/$SITE_REPO/releases" --channel "$CHANNEL" --json > /root/cms-install.json
+  - chown root:cms /etc/cms/config.yaml && chmod 0640 /etc/cms/config.yaml
+  - printf 'reverse_proxy 127.0.0.1:8081 {\n\thealth_uri /readyz\n}\n' > /etc/caddy/cms-upstream.caddy
+  - sudo -u cms CMS_CONFIG=/etc/cms/config.yaml /opt/cms/current/cms caddy > /etc/caddy/sites/cms.caddy
+  - echo "CMS_ACME_EMAIL=$ACME_EMAIL" >> /etc/default/caddy
+  - systemctl daemon-reload
+  - systemctl enable --now cms@blue cms-worker cms-upgrade.timer cms-backup.timer
+  - systemctl reload caddy || systemctl restart caddy
+  - sudo -u cms CMS_CONFIG=/etc/cms/config.yaml /opt/cms/current/cms doctor

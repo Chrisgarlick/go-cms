@@ -1,0 +1,6 @@
+name: spacer
+label: Spacer
+icon: space
+category: layout
+fields:
+  - { name: size, type: select, options: [small, medium, large], default: medium }

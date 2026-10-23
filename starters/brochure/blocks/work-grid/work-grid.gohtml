@@ -1,0 +1,15 @@
+<section class="section wrap">
+  <header class="section-head section-head-row">
+    {{with .Data.heading}}<h2 class="section-heading">{{.}}</h2>{{end}}
+    <a class="link-arrow" href="/work/">All case studies</a>
+  </header>
+  <div class="work-grid">
+    {{range .Page.Query (dict "type" "case-study" "limit" (default 3 .Data.limit))}}
+    <a class="work-card" href="{{.URL}}">
+      <span class="work-image">{{with .Image "card" "sizes" "(min-width: 60rem) 30vw, 100vw"}}{{.}}{{else}}<span class="work-placeholder"></span>{{end}}</span>
+      <span class="work-client">{{.Field "client"}}</span>
+      <h3>{{.Title}}</h3>
+    </a>
+    {{end}}
+  </div>
+</section>

@@ -1,0 +1,7 @@
+{{define "content"}}
+<header class="page-head"><div><p class="crumbs"><a href="/admin/menus/">Menus</a></p><h1>{{.Data.Label}}</h1></div>
+  <button class="btn btn-primary" type="button" data-menu-save>Save menu</button></header>
+<div id="menu-editor" class="panel pad"></div>
+<script type="application/json" id="menu-data">{{json .Data}}</script>
+{{end}}
+{{define "scripts"}}<script src="/admin/assets/editor.js?v={{.Version}}" type="module"></script>{{end}}

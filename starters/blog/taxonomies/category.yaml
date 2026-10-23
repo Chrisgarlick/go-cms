@@ -1,0 +1,4 @@
+name: category
+label: { singular: Category, plural: Categories }
+hierarchical: true
+url: /category/{slug}

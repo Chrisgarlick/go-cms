@@ -1,0 +1,20 @@
+name: case-study
+label: { singular: Case study, plural: Case studies }
+icon: layout-top
+url: /work/{slug}
+archive: /work
+supports: [title, slug, excerpt, featured_image, blocks, revisions, scheduling, seo]
+blocks:
+  default: [rich-text]
+sort: { field: published_at, order: desc }
+menu_position: 3
+fields:
+  - { name: client, type: text, required: true, width: 50 }
+  - { name: year, type: number, min: 1990, max: 2100, width: 50 }
+  - name: results
+    type: repeater
+    max_items: 4
+    label: Key results
+    fields:
+      - { name: value, type: text, required: true, placeholder: "+42%" }
+      - { name: label, type: text, required: true, placeholder: "conversion rate" }
