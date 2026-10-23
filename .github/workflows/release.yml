@@ -30,9 +30,8 @@ jobs:
         with:
           release-type: go
           target-branch: main
-          # Not GITHUB_TOKEN: PRs it opens wouldn't trigger `ci`.
-          # Falls back to GITHUB_TOKEN until the secret exists; release PRs opened
-          # with it do not trigger CI, so add the secret.
+          # Not GITHUB_TOKEN: PRs it opens wouldn't trigger `ci`. Falls back to
+          # GITHUB_TOKEN if the secret is missing (release PRs then skip CI).
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
   goreleaser:
