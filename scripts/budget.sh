@@ -9,6 +9,7 @@ site=$(mktemp -d)/site
 "$BIN" new "$site" --starter blog --git=false -q
 (cd "$site" && "$BIN" dev --port "$PORT" >/tmp/cms-budget.log 2>&1 &)
 for i in $(seq 1 120); do curl -fsS "http://localhost:$PORT/readyz" >/dev/null 2>&1 && break; sleep 1; done
+curl -fsS "http://localhost:$PORT/readyz" >/dev/null 2>&1 || { echo "cms dev never became ready:"; cat /tmp/cms-budget.log; exit 1; }
 sleep 3
 cat >/tmp/budget.js <<JS
 import http from 'k6/http';

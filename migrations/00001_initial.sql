@@ -158,8 +158,6 @@ CREATE TABLE entries (
     updated_at            timestamptz NOT NULL DEFAULT now(),
     deleted_at            timestamptz
 );
-ALTER TABLE entries ALTER COLUMN draft_fields SET COMPRESSION lz4;
-ALTER TABLE entries ALTER COLUMN draft_blocks SET COMPRESSION lz4;
 CREATE UNIQUE INDEX entries_route_key ON entries (type, locale, parent_id, slug) NULLS NOT DISTINCT
     WHERE deleted_at IS NULL;
 CREATE INDEX entries_listing_idx ON entries (type, status, published_at DESC);
@@ -184,10 +182,23 @@ CREATE TABLE entry_revisions (
     created_at  timestamptz NOT NULL DEFAULT now(),
     UNIQUE (entry_id, number)
 );
-ALTER TABLE entry_revisions ALTER COLUMN fields SET COMPRESSION lz4;
-ALTER TABLE entry_revisions ALTER COLUMN blocks SET COMPRESSION lz4;
 ALTER TABLE entries ADD CONSTRAINT entries_published_revision_fk
     FOREIGN KEY (published_revision_id) REFERENCES entry_revisions (id) ON DELETE SET NULL;
+
+-- Revision snapshots compress with lz4. Postgres built without lz4
+-- (some embedded test binaries) keeps the default pglz instead.
+-- +goose StatementBegin
+DO $$
+BEGIN
+    ALTER TABLE entries ALTER COLUMN draft_fields SET COMPRESSION lz4;
+    ALTER TABLE entries ALTER COLUMN draft_blocks SET COMPRESSION lz4;
+    ALTER TABLE entry_revisions ALTER COLUMN fields SET COMPRESSION lz4;
+    ALTER TABLE entry_revisions ALTER COLUMN blocks SET COMPRESSION lz4;
+EXCEPTION WHEN feature_not_supported THEN
+    RAISE NOTICE 'lz4 is not available: revision columns use pglz';
+END
+$$;
+-- +goose StatementEnd
 
 -- Search vectors live apart from entries: rows stay small and the driver never
 -- has to decode tsvector values.
