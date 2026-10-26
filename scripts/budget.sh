@@ -5,7 +5,14 @@ BIN=$(realpath "${BIN:-./bin/cms}")
 PORT=${PORT:-18090}
 P95_MS=${P95_MS:-20}
 RSS_MB=${RSS_MB:-128}
-site=$(mktemp -d)/site
+work=$(mktemp -d)
+site=$work/site
+cleanup() {
+  pkill -f "cms dev --port $PORT" 2>/dev/null || true
+  sleep 2                                  # let it stop Postgres before the files go
+  rm -rf "$work" /tmp/budget.js
+}
+trap cleanup EXIT
 "$BIN" new "$site" --starter blog --git=false -q
 (cd "$site" && "$BIN" dev --port "$PORT" >/tmp/cms-budget.log 2>&1 &)
 for i in $(seq 1 120); do curl -fsS "http://localhost:$PORT/readyz" >/dev/null 2>&1 && break; sleep 1; done
@@ -22,5 +29,4 @@ pid=$(pgrep -f "cms dev --port $PORT" | head -1)
 rss_kb=$(ps -o rss= -p "$pid" | tr -d ' ')
 rss_mb=$(( rss_kb / 1024 ))
 echo "cms RSS after load: ${rss_mb} MB (budget ${RSS_MB} MB)"
-kill "$pid" || true
 (( rss_mb <= RSS_MB )) || { echo "memory budget exceeded"; exit 1; }
