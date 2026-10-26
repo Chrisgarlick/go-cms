@@ -1,6 +1,8 @@
-# Distroless runtime image for the static binary (non-root).
+# Distroless runtime image for the static binary (non-root). GoReleaser's
+# dockers_v2 puts each platform's binary under <os>/<arch>/ in the context.
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY cms /usr/local/bin/cms
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/cms /usr/local/bin/cms
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/cms"]
