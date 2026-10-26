@@ -41,7 +41,7 @@ signs:
     output: true
 dockers_v2:
   - id: cms
-    images: ["ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/cms"]
+    images: ["ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/cms"] # GHCR names must be lowercase
     tags: ["{{ .Version }}", "edge"]
     dockerfile: deploy/Dockerfile
     platforms: [linux/amd64, linux/arm64]
