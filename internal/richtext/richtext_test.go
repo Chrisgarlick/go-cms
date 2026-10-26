@@ -1,6 +1,8 @@
 package richtext
 
 import (
+	"html"
+	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -71,14 +73,22 @@ func TestSlugify(t *testing.T) {
 func FuzzRender(f *testing.F) {
 	f.Add(`{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"<x>","marks":[{"type":"link","attrs":{"href":"javascript:1"}}]}]}]}`)
 	f.Add(`{"type":"doc","content":[{"type":"codeBlock","attrs":{"language":"\"><svg"},"content":[{"type":"text","text":"a"}]}]}`)
+	// A fragment that merely contains "javascript:" is a same-page link, not script.
+	f.Add(`{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"<x>","marks":[{"type":"link","attrs":{"href":"#000000000javascript:0"}}]}]}]}`)
 	f.Fuzz(func(t *testing.T, in string) {
 		n, err := Parse([]byte(in))
 		if err != nil {
 			return
 		}
 		out := strings.ToLower(string(HTML(n, Options{AnchorHeadings: true})))
-		if strings.Contains(out, "javascript:") {
-			t.Fatalf("unsafe url in %q", out)
+		// Judge each URL as a browser would: decode the attribute, then look
+		// at the scheme. (A plain substring check flags "#…javascript:…".)
+		for _, m := range urlAttrRe.FindAllStringSubmatch(out, -1) {
+			v := strings.TrimSpace(html.UnescapeString(m[1]))
+			u, err := url.Parse(v)
+			if err != nil || strings.HasPrefix(v, "//") || !allowedSchemes[u.Scheme] {
+				t.Fatalf("unsafe url %q in %q", v, out)
+			}
 		}
 		for _, m := range tagRe.FindAllStringSubmatch(out, -1) {
 			if !allowedTags[m[1]] {
@@ -94,10 +104,12 @@ func FuzzRender(f *testing.F) {
 }
 
 var (
-	tagRe        = regexp.MustCompile(`</?([a-z0-9]+)`)
-	attrRe       = regexp.MustCompile(`<[a-z0-9]+[^>]*?\s([a-z-]+)=`)
-	allowedTags  = map[string]bool{"p": true, "h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true, "ul": true, "ol": true, "li": true, "blockquote": true, "pre": true, "code": true, "hr": true, "br": true, "strong": true, "em": true, "s": true, "u": true, "sub": true, "sup": true, "a": true}
-	allowedAttrs = map[string]bool{"id": true, "href": true, "class": true, "start": true, "target": true, "rel": true}
+	tagRe          = regexp.MustCompile(`</?([a-z0-9]+)`)
+	attrRe         = regexp.MustCompile(`<[a-z0-9]+[^>]*?\s([a-z-]+)=`)
+	urlAttrRe      = regexp.MustCompile(`\s(?:href|src)="([^"]*)"`)
+	allowedSchemes = map[string]bool{"": true, "http": true, "https": true, "mailto": true, "tel": true}
+	allowedTags    = map[string]bool{"p": true, "h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true, "ul": true, "ol": true, "li": true, "blockquote": true, "pre": true, "code": true, "hr": true, "br": true, "strong": true, "em": true, "s": true, "u": true, "sub": true, "sup": true, "a": true}
+	allowedAttrs   = map[string]bool{"id": true, "href": true, "class": true, "start": true, "target": true, "rel": true}
 )
 
 func TestFromMarkdown(t *testing.T) {
