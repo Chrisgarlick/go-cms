@@ -124,13 +124,19 @@ type Sort struct {
 }
 
 type Taxonomy struct {
-	Name         string         `yaml:"name" json:"name"`
-	Label        Label          `yaml:"label" json:"label"`
-	Hierarchical bool           `yaml:"hierarchical" json:"hierarchical"`
-	URL          string         `yaml:"url" json:"url"` // e.g. /category/{slug}
-	Fields       []fields.Field `yaml:"fields" json:"fields"`
-	Types        []string       `yaml:"-" json:"types"`
-	pattern      *Pattern
+	Name         string `yaml:"name" json:"name"`
+	Label        Label  `yaml:"label" json:"label"`
+	Hierarchical bool   `yaml:"hierarchical" json:"hierarchical"`
+	URL          string `yaml:"url" json:"url"` // e.g. /category/{slug}
+	// TitleFormat and DescriptionFormat give term pages their <title> and
+	// meta description, with {term} for the term's name, e.g.
+	// `Articles tagged "{term}"`. A term's own seo_title and seo_description
+	// fields, if the taxonomy has them, win.
+	TitleFormat       string         `yaml:"title_format" json:"title_format,omitempty"`
+	DescriptionFormat string         `yaml:"description_format" json:"description_format,omitempty"`
+	Fields            []fields.Field `yaml:"fields" json:"fields"`
+	Types             []string       `yaml:"-" json:"types"`
+	pattern           *Pattern
 }
 
 type Location struct {

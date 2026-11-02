@@ -355,8 +355,19 @@ func (r *Renderer) Render(ctx context.Context, path string) (*Result, error) {
 		p.Taxonomy = rt.tax
 		p.Term = r.termView(rt.term)
 		p.dep("term", rt.term.ID.String())
-		p.Title = rt.term.Name
-		p.Description = rt.term.Description
+		p.Title, p.Description = rt.term.Name, rt.term.Description
+		if f := rt.tax.TitleFormat; f != "" {
+			p.Title = strings.ReplaceAll(f, "{term}", rt.term.Name)
+		}
+		if f := rt.tax.DescriptionFormat; f != "" && p.Description == "" {
+			p.Description = strings.ReplaceAll(f, "{term}", rt.term.Name)
+		}
+		if v, _ := p.Term.Fields["seo_title"].(string); v != "" {
+			p.Title = v
+		}
+		if v, _ := p.Term.Fields["seo_description"].(string); v != "" {
+			p.Description = v
+		}
 		var ct *site.ContentType
 		if len(rt.tax.Types) > 0 {
 			ct = r.Site().Types[rt.tax.Types[0]]

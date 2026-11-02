@@ -122,6 +122,14 @@ func TestRenderPublishedSite(t *testing.T) {
 		!strings.Contains(body, `<meta name="description" content="Everything I&#39;ve written.">`) {
 		t.Errorf("archive title and description: %.600s", body)
 	}
+	// A taxonomy's title format.
+	b.Taxonomies["category"].TitleFormat = `Posts about "{term}"`
+	if _, err := cs.CreateTerm(actx, content.TermInput{Taxonomy: "category", Name: "Go", Slug: "go"}); err != nil {
+		t.Fatal(err)
+	}
+	if res, err := r.Render(ctx, "/category/go/"); err != nil || !strings.Contains(string(res.Body), "<title>Posts about &#34;Go&#34; | Test Blog</title>") {
+		t.Errorf("term title: %v %.400s", err, res.Body)
+	}
 	res, _ = r.Render(ctx, "/blog/nope/")
 	if res.Status != 404 || res.Cacheable {
 		t.Errorf("404: status %d cacheable %v", res.Status, res.Cacheable)
