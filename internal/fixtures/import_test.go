@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"cms/internal/app"
 	"cms/internal/content"
@@ -143,4 +144,19 @@ func TestImportRerun(t *testing.T) {
 
 func dbqParams(typ, slug string) dbq.EntryByTypeSlugParams {
 	return dbq.EntryByTypeSlugParams{Type: typ, DraftSlug: slug}
+}
+
+// Load reads content.yaml first, then the other fixture files in order.
+func TestLoadAllFixtureFiles(t *testing.T) {
+	a, _ := testutil.NewApp(t, "blog")
+	ctx := app.SystemCtx(context.Background(), "test")
+	fsys := fstest.MapFS{
+		"fixtures/content.yaml":   {Data: []byte("entries:\n  - { type: page, title: First, slug: first, publish: true }\n")},
+		"fixtures/reference.yaml": {Data: []byte(`{"entries": [{"type": "page", "title": "Second", "slug": "second", "publish": true}]}`)},
+		"fixtures/notes.txt":      {Data: []byte("not a fixture")},
+	}
+	n, err := fixtures.Load(ctx, fsys, services(a))
+	if err != nil || n != 2 {
+		t.Fatalf("loaded %d: %v", n, err)
+	}
 }

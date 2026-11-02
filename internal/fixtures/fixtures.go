@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"sort"
 	"strings"
 	"time"
 
@@ -84,17 +85,31 @@ type Services struct {
 	Redirects *redirects.Service
 }
 
-// Load imports fixtures when the site has no entries yet. Returns entries created.
+// Load imports a site's fixtures (cms dev on an empty database, cms check):
+// fixtures/content.yaml first, then any other fixtures/*.yaml in name order,
+// such as a generated reference beside hand-written pages. Returns entries
+// created.
 func Load(ctx context.Context, fsys fs.FS, s Services) (int, error) {
-	data, err := fs.ReadFile(fsys, "fixtures/content.yaml")
-	if err != nil {
-		return 0, nil
+	files, _ := fs.Glob(fsys, "fixtures/*.yaml")
+	sort.Slice(files, func(i, j int) bool {
+		if (files[i] == "fixtures/content.yaml") != (files[j] == "fixtures/content.yaml") {
+			return files[i] == "fixtures/content.yaml"
+		}
+		return files[i] < files[j]
+	})
+	n := 0
+	for _, f := range files {
+		data, err := fs.ReadFile(fsys, f)
+		if err != nil {
+			return n, err
+		}
+		r, err := Import(ctx, data, s, ImportOptions{})
+		n += r.Created
+		if err != nil {
+			return n, fmt.Errorf("%s: %w", f, err)
+		}
 	}
-	r, err := Import(ctx, data, s, ImportOptions{})
-	if err != nil {
-		return r.Created, fmt.Errorf("fixtures/content.yaml: %w", err)
-	}
-	return r.Created, nil
+	return n, nil
 }
 
 // ImportOptions control how an import treats what's already there.
