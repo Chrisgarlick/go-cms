@@ -21,7 +21,7 @@ Where the implementation differs from v0.3, the code won and this document was u
   - **Theme `static/`** files are served at the site root (favicons, `.well-known/`). `static/og/<path>.png` is a page's social image when it has none of its own.
   - **CSS `url()` fingerprinting:** relative references in theme stylesheets (fonts, images) are rewritten to fingerprinted asset URLs.
   - **Block definitions** can set `wrapper: false` to drop the `<div class="b b-name">` wrapper.
-  - **Template helpers:** `.Refs` / `.Entry.Refs` (entry reference fields), `.EntryBySlug`, `.Entry.Blocks`, `.Form`, and the functions `inline` (`*em*` / `**strong**` in text fields), `cond`, `append` and `pad`.
+  - **Template helpers:** `.Refs` / `.Entry.Refs` (entry reference fields), `.EntryBySlug`, `.Entry.Blocks`, `.Form`, and the functions `inline` (`*em*` / `**strong**` in text fields), `cond`, `append`, `pad` and `fromJSON` (structured content kept as JSON in a code field).
   - **Monorepo-safe release feeds.** Site bundles are picked by tag prefix (`upgrade.site_tag_prefix`, tags `<prefix>-YYYYMMDD-HHMMSS-<sha7>`), and core releases strictly by `vX.Y.Z` plus channel. Feeds are paginated, and selection fails closed when nothing matches.
     - Each bundle carries `bundle.json` and is refused if it was built for another site.
     - Bundles can be verified with their own key (`upgrade.site_public_key`).

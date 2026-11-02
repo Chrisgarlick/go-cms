@@ -75,9 +75,21 @@ func Funcs() template.FuncMap {
 		"lines": func(s string) []string {
 			return strings.Split(strings.ReplaceAll(strings.TrimSpace(s), "\r\n", "\n"), "\n")
 		},
-		"words":   func(s string) int { return len(strings.Fields(s)) },
-		"field":   field,
-		"toJSON":  func(v any) string { b, _ := json.Marshal(v); return string(b) },
+		"words":  func(s string) int { return len(strings.Fields(s)) },
+		"field":  field,
+		"toJSON": func(v any) string { b, _ := json.Marshal(v); return string(b) },
+		// fromJSON parses a JSON field (a code field holding structured
+		// content) for a template; invalid JSON is nil.
+		"fromJSON": func(v any) any {
+			var out any
+			switch t := v.(type) {
+			case string:
+				_ = json.Unmarshal([]byte(t), &out)
+			case []byte:
+				_ = json.Unmarshal(t, &out)
+			}
+			return out
+		},
 		"blockID": blocks.NewID,
 		"safeURL": func(u string) string {
 			if s, ok := richtext.SafeURL(u); ok {
