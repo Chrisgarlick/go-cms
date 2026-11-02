@@ -218,7 +218,7 @@ func applyEnv(c *Config) {
 }
 
 func fileExists(p string) bool {
-	_, err := os.Stat(p)
+	_, err := os.Stat(p) //nolint:gosec // $CREDENTIALS_DIRECTORY is set by systemd, not by a request
 	return err == nil
 }
 
