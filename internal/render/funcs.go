@@ -113,6 +113,7 @@ func Funcs() template.FuncMap {
 }
 
 var (
+	inlineCode   = regexp.MustCompile("`([^`]+)`")
 	inlineStrong = regexp.MustCompile(`\*\*(\S(?:.*?\S)?)\*\*`)
 	inlineEm     = regexp.MustCompile(`\*(\S(?:.*?\S)?)\*`)
 )
@@ -124,6 +125,7 @@ func inline(v any) template.HTML {
 	if v == nil {
 		s = ""
 	}
+	s = inlineCode.ReplaceAllString(s, "<code>$1</code>")
 	s = inlineStrong.ReplaceAllString(s, "<strong>$1</strong>")
 	s = inlineEm.ReplaceAllString(s, "<em>$1</em>")
 	return template.HTML(s)

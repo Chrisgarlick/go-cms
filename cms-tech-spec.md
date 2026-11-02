@@ -34,6 +34,7 @@ Where the implementation differs from v0.3, the code won and this document was u
     - `--skip-field <name>` keeps a field the file must never overwrite, such as hand-written notes on a generated page.
     - `--prune <type>` moves entries of that type that the file no longer has to the trash.
     - `cms dev` (on an empty database) and `cms check` load `fixtures/content.yaml` and then every other `fixtures/*.yaml` in name order, so a generated reference can sit beside hand-written pages.
+    - A Markdown body's GFM tables (outside code fences) become `table` blocks between rich-text blocks, since rich text has no tables. Table cells, like other text fields rendered with `inline`, take `` `code` ``, `*em*` and `**strong**`.
   - **Tailwind build step** (4.12): a theme opts in with `theme/tailwind/input.css` (plus `tailwind.config.js`).
     - `cms tailwind` compiles it to `theme/assets/tailwind.css`, which is committed, so servers never build CSS. `cms dev` rebuilds as files change; `cms check` (so site CI) fails when the committed file is stale.
     - It uses the standalone Tailwind CLI v3.4.17 (first-party plugins such as typography included): no Node. The binary is downloaded on first use into the user cache directory and checked against SHA-256 sums held in the cms source. `CMS_TAILWIND_BIN` points at a binary instead (offline machines).

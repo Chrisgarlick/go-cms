@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -257,10 +258,7 @@ func Import(ctx context.Context, data []byte, s Services, opt ImportOptions) (Im
 		var tree []map[string]any
 		switch body := fe.Body.(type) {
 		case string:
-			if body != "" {
-				tree = append(tree, map[string]any{"id": blocks.NewID(), "type": "rich-text",
-					"data": map[string]any{"body": richtext.FromMarkdown(body)}})
-			}
+			tree = append(tree, markdownBlocks(body)...)
 		case map[string]any:
 			tree = append(tree, map[string]any{"id": blocks.NewID(), "type": "rich-text", "data": map[string]any{"body": body}})
 		case nil:
@@ -365,6 +363,56 @@ func Import(ctx context.Context, data []byte, s Services, opt ImportOptions) (Im
 		}
 	}
 	return res, nil
+}
+
+var tableDelim = regexp.MustCompile(`^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$`)
+
+// markdownBlocks turns a Markdown body into blocks: rich text, with each
+// GFM table (outside code fences) as a table block, since rich text has no
+// tables.
+func markdownBlocks(body string) []map[string]any {
+	var out []map[string]any
+	var text []string
+	flush := func() {
+		md := strings.TrimSpace(strings.Join(text, "\n"))
+		text = nil
+		if md != "" {
+			out = append(out, map[string]any{"id": blocks.NewID(), "type": "rich-text",
+				"data": map[string]any{"body": richtext.FromMarkdown(md)}})
+		}
+	}
+	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	fence := false
+	for i := 0; i < len(lines); i++ {
+		t := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(t, "```") {
+			fence = !fence
+		}
+		if fence || !strings.HasPrefix(t, "|") || i+1 >= len(lines) || !tableDelim.MatchString(strings.TrimSpace(lines[i+1])) {
+			text = append(text, lines[i])
+			continue
+		}
+		flush()
+		rows := []any{map[string]any{"cells": strings.Join(tableCells(t), "\n")}}
+		for i += 2; i < len(lines) && strings.HasPrefix(strings.TrimSpace(lines[i]), "|"); i++ {
+			rows = append(rows, map[string]any{"cells": strings.Join(tableCells(strings.TrimSpace(lines[i])), "\n")})
+		}
+		i--
+		out = append(out, map[string]any{"id": blocks.NewID(), "type": "table", "data": map[string]any{"header": true, "rows": rows}})
+	}
+	flush()
+	return out
+}
+
+// tableCells splits a "| a | b |" row; `\|` is a literal pipe.
+func tableCells(row string) []string {
+	row = strings.TrimSuffix(strings.TrimPrefix(row, "|"), "|")
+	row = strings.ReplaceAll(row, `\|`, "\x00")
+	parts := strings.Split(row, "|")
+	for i, p := range parts {
+		parts[i] = strings.ReplaceAll(strings.TrimSpace(p), "\x00", "|")
+	}
+	return parts
 }
 
 // sameEntry reports whether an entry's working copy already holds this
