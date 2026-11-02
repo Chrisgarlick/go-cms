@@ -208,12 +208,18 @@ func applyEnv(c *Config) {
 	if v, ok := os.LookupEnv("CMS_SERVE_STATIC"); ok {
 		c.HTTP.ServeStatic, _ = strconv.ParseBool(v)
 	}
-	// systemd LoadCredential: default the KEK path when present.
-	if c.Keys.KEKFile == "" {
-		if dir := os.Getenv("CREDENTIALS_DIRECTORY"); dir != "" {
-			c.Keys.KEKFile = filepath.Join(dir, "kek")
+	// systemd LoadCredential: the unit's copy of the key wins. The file the
+	// config names is readable by root only; the services run unprivileged.
+	if dir := os.Getenv("CREDENTIALS_DIRECTORY"); dir != "" {
+		if p := filepath.Join(dir, "kek"); fileExists(p) {
+			c.Keys.KEKFile = p
 		}
 	}
+}
+
+func fileExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }
 
 func splitList(v string) []string {
