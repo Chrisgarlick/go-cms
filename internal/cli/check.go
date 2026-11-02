@@ -19,6 +19,7 @@ import (
 	"cms/internal/fixtures"
 	"cms/internal/keys"
 	"cms/internal/render"
+	"cms/internal/tailwind"
 )
 
 // checkCmd validates a site repository end to end without a server: schema,
@@ -49,6 +50,12 @@ type checkResult struct {
 func runCheck(ctx context.Context, siteDir string) error {
 	start := time.Now()
 	siteDir, _ = filepath.Abs(siteDir)
+	if tailwind.Used(siteDir) {
+		info("Checking the committed Tailwind CSS…")
+		if err := tailwind.Check(ctx, siteDir); err != nil {
+			return err
+		}
+	}
 	tmp, err := os.MkdirTemp("", "cms-check-")
 	if err != nil {
 		return err

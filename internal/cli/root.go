@@ -62,7 +62,7 @@ func newRoot() *cobra.Command {
 		versionCmd(), serveCmd(), workerCmd(), migrateCmd(), devCmd(), newCmd(), makeCmd(),
 		userCmd(), schemaCmd(), contentCmd(), themeCmd(), cacheCmd(), buildCmd(), searchCmd(),
 		doctorCmd(), securityCmd(), redirectsCmd(), mediaCmd(), keysCmd(), backupCmd(), installCmd(),
-		upgradeCmd(), auditCmd(), settingsCmd(), tokenCmd(), mediaProcessCmd(), configCmd(), checkCmd(), caddyCmd(),
+		upgradeCmd(), auditCmd(), settingsCmd(), tokenCmd(), mediaProcessCmd(), configCmd(), checkCmd(), caddyCmd(), tailwindCmd(),
 	)
 	return root
 }

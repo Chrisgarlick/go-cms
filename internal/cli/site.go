@@ -29,6 +29,7 @@ import (
 	"cms/internal/rbac"
 	"cms/internal/richtext"
 	"cms/internal/site"
+	"cms/internal/tailwind"
 	"cms/internal/version"
 	"cms/starters"
 )
@@ -303,6 +304,12 @@ func runDev(ctx context.Context, siteDir string, port int, reset bool) error {
 		ln.Close()
 	}
 	log := logger()
+	if tailwind.Used(siteDir) {
+		info("Building Tailwind CSS (first run downloads the CLI once, ~50 MB)…")
+		if _, err := tailwind.Build(ctx, siteDir); err != nil {
+			return err
+		}
+	}
 	info("Starting Postgres (first run downloads it once, ~30 MB)…")
 	cluster, err := devdb.Start(filepath.Join(state, "pg"), 0, nil)
 	if err != nil {
@@ -407,6 +414,13 @@ func watchBundle(ctx context.Context, a *app.App) {
 		b, err := site.LoadDir(a.Cfg.Paths.Site)
 		if err != nil || b.Hash == last {
 			continue
+		}
+		// Templates or the Tailwind sources changed: rebuild the CSS. A
+		// changed stylesheet changes the hash again on the next tick.
+		if wrote, err := tailwind.Build(ctx, a.Cfg.Paths.Site); err != nil {
+			a.Log.Error("tailwind build failed (keeping the previous CSS)", "err", err)
+		} else if wrote {
+			a.Log.Info("tailwind.css rebuilt")
 		}
 		b.AddBuiltinBlocks(blocks.Builtin())
 		if err := b.Finalize(); err != nil {

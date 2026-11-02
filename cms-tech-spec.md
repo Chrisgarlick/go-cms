@@ -33,6 +33,9 @@ Where the implementation differs from v0.3, the code won and this document was u
     - `--update` brings existing entries (matched by type and slug) in line with the file: title, excerpt, SEO, template, terms, fields and blocks. Anything the file doesn't set, such as a featured image chosen in the admin, is kept. An entry that already matches gets no new revision.
     - `--skip-field <name>` keeps a field the file must never overwrite, such as hand-written notes on a generated page.
     - `--prune <type>` moves entries of that type that the file no longer has to the trash.
+  - **Tailwind build step** (4.12): a theme opts in with `theme/tailwind/input.css` (plus `tailwind.config.js`).
+    - `cms tailwind` compiles it to `theme/assets/tailwind.css`, which is committed, so servers never build CSS. `cms dev` rebuilds as files change; `cms check` (so site CI) fails when the committed file is stale.
+    - It uses the standalone Tailwind CLI v3.4.17 (first-party plugins such as typography included): no Node. The binary is downloaded on first use into the user cache directory and checked against SHA-256 sums held in the cms source. `CMS_TAILWIND_BIN` points at a binary instead (offline machines).
 - **Deferred, not yet built:** magic-link login, S3 storage driver and imgproxy (local disk only for now), point-in-time recovery (`cms backup` is pg_dump plus media), reusable blocks, admin command palette, saved list views, admin i18n, `cms schema export --go|--ts`. These stay on the roadmap and are not required to run a blog or brochure site.
 - **Tests:** Go tests run against embedded Postgres; Playwright E2E checks every admin and public page for CSP violations and axe errors, plus the passkey flow (10).
 
@@ -526,6 +529,7 @@ Not planned. If a site needs comments, use an external service embedded as a cli
 - Site themes declare `extends: base` and override only what is unique to the site. Improvements to the base theme reach every site with a core release, without editing site repos
 - Overrides are by template name; `cms theme validate` warns when an override shadows a base template that changed in the pinned core version
 - Asset pipeline for theme CSS/JS (fingerprinted filenames, long cache headers)
+- Optional Tailwind: `theme/tailwind/` compiled by `cms tailwind` (pinned standalone CLI, checksum-verified) into a committed `theme/assets/tailwind.css`; `cms dev` rebuilds it and `cms check` fails if it is stale
 - Default theme performance budget: < 50 KB CSS + JS, no JS required to read content, Lighthouse 100, WCAG 2.2 AA
 - Preview mode and theme switching via CLI and admin
 - `cms theme dev`: live reload of templates and blocks for theme authors
