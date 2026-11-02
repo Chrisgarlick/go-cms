@@ -97,13 +97,17 @@ type ContentType struct {
 	Blocks       BlockPolicy    `yaml:"blocks" json:"blocks"`
 	Sort         Sort           `yaml:"sort" json:"sort"`
 	PerPage      int            `yaml:"per_page" json:"per_page"`
-	ListColumns  []string       `yaml:"list_columns" json:"list_columns"`
-	Cache        string         `yaml:"cache" json:"cache"` // static | uncached
-	Feed         bool           `yaml:"feed" json:"feed"`
-	Sitemap      *bool          `yaml:"sitemap" json:"sitemap"`
-	Search       *bool          `yaml:"search" json:"search"`
-	MenuPosition int            `yaml:"menu_position" json:"menu_position"`
-	Template     string         `yaml:"template" json:"template"`
+	// ArchiveTitle and ArchiveDescription are the archive page's <title>
+	// and meta description (default: the plural label, the site's).
+	ArchiveTitle       string   `yaml:"archive_title" json:"archive_title,omitempty"`
+	ArchiveDescription string   `yaml:"archive_description" json:"archive_description,omitempty"`
+	ListColumns        []string `yaml:"list_columns" json:"list_columns"`
+	Cache              string   `yaml:"cache" json:"cache"` // static | uncached
+	Feed               bool     `yaml:"feed" json:"feed"`
+	Sitemap            *bool    `yaml:"sitemap" json:"sitemap"`
+	Search             *bool    `yaml:"search" json:"search"`
+	MenuPosition       int      `yaml:"menu_position" json:"menu_position"`
+	Template           string   `yaml:"template" json:"template"`
 
 	pattern *Pattern
 }

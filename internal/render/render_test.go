@@ -115,6 +115,13 @@ func TestRenderPublishedSite(t *testing.T) {
 			t.Errorf("%s: status %d, missing %q", path, res.Status, want)
 		}
 	}
+	// An archive's own title and description.
+	b.Types["post"].ArchiveTitle, b.Types["post"].ArchiveDescription = "Notes and essays", "Everything I've written."
+	res, _ = r.Render(ctx, "/blog/")
+	if body := string(res.Body); !strings.Contains(body, "<title>Notes and essays | Test Blog</title>") ||
+		!strings.Contains(body, `<meta name="description" content="Everything I&#39;ve written.">`) {
+		t.Errorf("archive title and description: %.600s", body)
+	}
 	res, _ = r.Render(ctx, "/blog/nope/")
 	if res.Status != 404 || res.Cacheable {
 		t.Errorf("404: status %d cacheable %v", res.Status, res.Cacheable)

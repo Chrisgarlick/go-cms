@@ -347,7 +347,8 @@ func (r *Renderer) Render(ctx context.Context, path string) (*Result, error) {
 			}
 			candidates = []string{"templates/home", "templates/archive-" + ct.Name, "templates/archive"}
 		} else {
-			p.Title = ct.Label.Plural
+			p.Title = firstNonEmpty(ct.ArchiveTitle, ct.Label.Plural)
+			p.Description = ct.ArchiveDescription
 			candidates = []string{"templates/archive-" + ct.Name, "templates/archive"}
 		}
 	case "taxonomy":
