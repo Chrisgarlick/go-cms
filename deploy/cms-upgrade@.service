@@ -1,0 +1,11 @@
+# Pulls signed releases for a named site's channel and deploys them (spec 9.6).
+[Unit]
+Description=cms upgrade check (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=CMS_CONFIG=/etc/cms/%i/config.yaml
+ExecStart=/opt/cms/sites/%i/current/cms upgrade
+ExecStart=/opt/cms/sites/%i/current/cms upgrade --site

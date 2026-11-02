@@ -1,0 +1,50 @@
+# Web instance of a named site, when one server runs several (cms install
+# --name). Install this file twice, as cms-blue@.service and
+# cms-green@.service: %j (the last part of the unit name before the @) is the
+# colour, %i the site. Ports come from /etc/cms/<site>/<colour>.env.
+[Unit]
+Description=cms web (%i, %j)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cms
+Group=cms
+Environment=CMS_CONFIG=/etc/cms/%i/config.yaml
+Environment=GOMEMLIMIT=100MiB
+Environment=CMS_LOG_FORMAT=json
+EnvironmentFile=/etc/cms/%i/%j.env
+ExecStart=/opt/cms/sites/%i/%j/cms serve --addr 127.0.0.1:${PORT}
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=40
+KillSignal=SIGTERM
+MemoryMax=192M
+LoadCredential=kek:/etc/cms/%i/kek
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/cms/%i
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

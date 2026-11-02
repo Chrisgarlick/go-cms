@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,12 @@ const (
 )
 
 type Config struct {
+	// Name identifies this site when one server runs several (spec 9.5):
+	// its config, keys and deploy tree live under /etc/cms/<name>,
+	// /var/lib/cms/<name> and /opt/cms/sites/<name>, its units are
+	// cms-blue@<name>, cms-green@<name> and cms-worker@<name>. Empty is
+	// the single-site layout.
+	Name    string `yaml:"name"`
 	Env     Env    `yaml:"env"`
 	BaseURL string `yaml:"base_url"`
 	// Hosts the public site answers for. Requests for any other Host get 421.
@@ -220,8 +227,15 @@ func splitList(v string) []string {
 }
 
 // Validate checks every field and returns all problems at once.
+// NameRe is what a site name may look like (it becomes paths, unit
+// instances and Postgres identifiers).
+var NameRe = regexp.MustCompile(`^[a-z][a-z0-9-]{0,30}[a-z0-9]$`)
+
 func (c *Config) Validate() error {
 	var errs []error
+	if c.Name != "" && !NameRe.MatchString(c.Name) {
+		errs = append(errs, fmt.Errorf("name: lower-case letters, digits and dashes, 2–32 characters, got %q", c.Name))
+	}
 	switch c.Env {
 	case EnvProduction, EnvDevelopment, EnvTest:
 	default:
@@ -307,6 +321,23 @@ func (h *HTTP) MetricsToken() string {
 		return ""
 	}
 	return strings.TrimSpace(string(b))
+}
+
+// DeployHome is where this site's deploy tree lives: colour links, the
+// active colour and its site bundles.
+func (c *Config) DeployHome() string {
+	if c.Name == "" {
+		return "/opt/cms"
+	}
+	return "/opt/cms/sites/" + c.Name
+}
+
+// DeployArgs are the deploy script's arguments that pick this site.
+func (c *Config) DeployArgs() []string {
+	if c.Name == "" {
+		return nil
+	}
+	return []string{"--name", c.Name}
 }
 
 func (c *Config) PublicDir() string { return filepath.Join(c.Paths.Data, "public") }

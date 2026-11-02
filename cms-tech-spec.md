@@ -36,6 +36,7 @@ Where the implementation differs from v0.3, the code won and this document was u
   - **Tailwind build step** (4.12): a theme opts in with `theme/tailwind/input.css` (plus `tailwind.config.js`).
     - `cms tailwind` compiles it to `theme/assets/tailwind.css`, which is committed, so servers never build CSS. `cms dev` rebuilds as files change; `cms check` (so site CI) fails when the committed file is stale.
     - It uses the standalone Tailwind CLI v3.4.17 (first-party plugins such as typography included): no Node. The binary is downloaded on first use into the user cache directory and checked against SHA-256 sums held in the cms source. `CMS_TAILWIND_BIN` points at a binary instead (offline machines).
+  - **Several sites on one server, behind nginx** (9.5): `cms install --name <site> --ports BLUE,GREEN`, per-site units (`cms-blue@`, `cms-green@`, `cms-worker@`, timers), `deploy.sh --name`, and `cms nginx`, which prints the server blocks; deploys only switch an upstream include.
 - **Deferred, not yet built:** magic-link login, S3 storage driver and imgproxy (local disk only for now), point-in-time recovery (`cms backup` is pg_dump plus media), reusable blocks, admin command palette, saved list views, admin i18n, `cms schema export --go|--ts`. These stay on the roadmap and are not required to run a blog or brochure site.
 - **Tests:** Go tests run against embedded Postgres; Playwright E2E checks every admin and public page for CSP violations and axe errors, plus the passkey flow (10).
 
@@ -1070,6 +1071,21 @@ example.com {
 # reverse_proxy 127.0.0.1:8081 { health_uri /readyz }
 ```
 
+**Several sites on one server, behind nginx** (built for kritano.com and docs.kritano.com, which share a droplet with other services):
+- `cms install --name <site> --ports BLUE,GREEN` gives the site its own:
+  - database `cms_<site>` with roles `cms_<site>_migrator` and `cms_<site>_app` (dashes become underscores)
+  - config and key under `/etc/cms/<site>/`, and its ports in `/etc/cms/<site>/{blue,green}.env`
+  - data under `/var/lib/cms/<site>`
+  - deploy tree under `/opt/cms/sites/<site>/` (`blue`, `green`, `current`, `active-colour`, `site/releases`, `site/current`)
+  - The config's `name:` makes `cms upgrade` use that tree and call `deploy.sh --name <site>`. Core releases stay shared in `/opt/cms/releases/<version>/`; they are unpacked beside their final path and renamed into place, so one site never unpacks over a binary another is running.
+- **Units** are per site: `cms-blue@<site>` and `cms-green@<site>` (one file, `cms-colour@.service`, installed under both names; the colour is the unit's `%j`), `cms-worker@<site>`, `cms-upgrade@<site>.timer` and `cms-backup@<site>.timer`.
+- **`cms nginx`** prints the site's server blocks:
+  - Pre-rendered pages, feeds, the sitemap and fingerprinted assets come from disk with `gzip_static`, and media from the media directory, each with the same security headers Go sets. In nginx a location's `add_header` replaces the server's, so each static location repeats them.
+  - Dynamic routes, cache misses and **every request with a query string** go to the active colour, so redirect rules that match on the query (4.5) work.
+  - TLS uses the Let's Encrypt certificate of the first host; other hosts get a 308 to it.
+  - It is generated once, at install, because certbot and hand edits live in that file. A deploy only rewrites `/etc/nginx/cms/<site>-upstream.conf` (one `proxy_pass` line) and runs `nginx -t` before `systemctl reload nginx`, restoring the old line if the test fails.
+- The unnamed layout (`cms@blue`, Caddy, `/etc/cms/config.yaml`) is unchanged.
+
 ### 9.6 Staying up to date
 - **Renovate:** Go modules, GitHub Actions, base images and the Go toolchain; grouped weekly; patch and minor updates auto-merge when CI is green; security updates immediately
 - **Nightly jobs** on `main` and on the latest release tag: `govulncheck`, Trivy image scan, long fuzz runs, ZAP baseline. A new advisory affecting a released version opens an issue and a patch-release PR automatically
@@ -1097,7 +1113,7 @@ example.com {
 ### 9.9 Upgrades and maintenance
 - Migrations are forward-only and expand/contract style, enforced in CI (9.2)
 - Schema changes to content types go through files → `cms schema diff` → `apply`
-- Multi-site [later]: one binary, many configs and databases
+- Multi-site: one binary, many configs and databases, each site with its own units and deploy tree (9.5, `cms install --name`)
 
 ---
 

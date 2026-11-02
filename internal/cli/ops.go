@@ -399,23 +399,57 @@ func pruneBackups(dir string, keep int) {
 func installCmd() *cobra.Command {
 	var siteDir, domain, superURL, dataDir, configOut, kekOut, ownerEmail, dbName, dbHost string
 	var feed, siteFeed, tokenFile, pubKey, channel, sitePrefixFlag, siteKey string
+	var name string
+	var ports []int
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Set up a server for a site: keys, database roles, config, migrations, first owner",
 		Long: `Set up a fresh server. Needs a Postgres superuser URL once (never stored).
 Creates the cms_migrator and cms_app roles with random passwords, writes
 /etc/cms/config.yaml and the key file, migrates, applies the site's schema and
-invites the first owner.`,
+invites the first owner.
+
+With --name, the site is one of several on this server (spec 9.5): its database
+is cms_<name> with roles cms_<name>_migrator and cms_<name>_app, its files live
+under /etc/cms/<name>, /var/lib/cms/<name> and /opt/cms/sites/<name>, and
+--ports sets its blue and green ports (written to /etc/cms/<name>/blue.env and
+green.env, which the cms-blue@ and cms-green@ units read).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			if domain == "" || superURL == "" || ownerEmail == "" {
 				return errors.New("--domain, --db-super-url and --owner-email are required")
 			}
+			migRole, appRole := "cms_migrator", "cms_app"
+			etc := "/etc/cms"
+			if name != "" {
+				if !config.NameRe.MatchString(name) {
+					return fmt.Errorf("--name %q: lower-case letters, digits and dashes", name)
+				}
+				if len(ports) != 2 || ports[0] == ports[1] {
+					return errors.New("--name needs --ports BLUE,GREEN (two different ports, e.g. 8101,8102)")
+				}
+				ident := strings.ReplaceAll(name, "-", "_")
+				migRole, appRole = "cms_"+ident+"_migrator", "cms_"+ident+"_app"
+				etc = "/etc/cms/" + name
+				flags := cmd.Flags()
+				def := func(flag string, v *string, val string) {
+					if !flags.Changed(flag) {
+						*v = val
+					}
+				}
+				def("db-name", &dbName, "cms_"+ident)
+				def("data-dir", &dataDir, "/var/lib/cms/"+name)
+				def("config-out", &configOut, etc+"/config.yaml")
+				def("kek-out", &kekOut, etc+"/kek")
+				def("site", &siteDir, "/opt/cms/sites/"+name+"/site/current")
+				def("token-file", &tokenFile, etc+"/releases-token")
+				def("site-tag-prefix", &sitePrefixFlag, name)
+			}
 			if _, err := os.Stat(filepath.Join(siteDir, "site.yaml")); err != nil {
 				return fmt.Errorf("no site bundle at %s", siteDir)
 			}
 			migPass, appPass := auth.RandomToken(24), auth.RandomToken(24)
-			if err := devdb.EnsureRolesAndDatabase(ctx, superURL, dbName, "cms_migrator", "cms_app", migPass, appPass); err != nil {
+			if err := devdb.EnsureRolesAndDatabase(ctx, superURL, dbName, migRole, appRole, migPass, appPass); err != nil {
 				return fmt.Errorf("database setup: %w", err)
 			}
 			su, err := url.Parse(superURL)
@@ -439,14 +473,21 @@ invites the first owner.`,
 				}
 				info("Wrote %s. Back this key up somewhere safe: without it encrypted data cannot be recovered.", kekOut)
 			}
+			addr := "127.0.0.1:8081"
+			if name != "" {
+				addr = fmt.Sprintf("127.0.0.1:%d", ports[0])
+			}
 			cfgFile := map[string]any{
 				"env": "production", "base_url": "https://" + domain, "hosts": []string{domain},
-				"http":     map[string]any{"addr": "127.0.0.1:8081", "trusted_proxies": []string{"127.0.0.1/32", "::1/128"}},
-				"database": map[string]any{"url": mk("cms_app", appPass), "migrator_url": mk("cms_migrator", migPass)},
+				"http":     map[string]any{"addr": addr, "trusted_proxies": []string{"127.0.0.1/32", "::1/128"}},
+				"database": map[string]any{"url": mk(appRole, appPass), "migrator_url": mk(migRole, migPass)},
 				"paths":    map[string]any{"data": dataDir, "site": siteDir},
 				"keys":     map[string]any{"kek_file": kekOut},
 				"upgrade": map[string]any{"channel": channel, "feed_url": feed, "site_feed_url": siteFeed, "site_tag_prefix": sitePrefixFlag,
 					"token_file": tokenFile, "public_key": pubKey, "site_public_key": siteKey},
+			}
+			if name != "" {
+				cfgFile["name"] = name
 			}
 			yb, _ := yaml.Marshal(cfgFile)
 			if err := os.MkdirAll(filepath.Dir(configOut), 0o750); err != nil {
@@ -455,12 +496,19 @@ invites the first owner.`,
 			if err := os.WriteFile(configOut, yb, 0o600); err != nil {
 				return err
 			}
+			if name != "" {
+				for i, colour := range []string{"blue", "green"} {
+					if err := os.WriteFile(filepath.Join(etc, colour+".env"), fmt.Appendf(nil, "PORT=%d\n", ports[i]), 0o644); err != nil { //nolint:gosec // not secret
+						return err
+					}
+				}
+			}
 			g.config = configOut
 			cfg, err := config.Load(configOut)
 			if err != nil {
 				return err
 			}
-			if _, err := db.Migrate(ctx, cfg.Database.MigratorURL, "cms_app"); err != nil {
+			if _, err := db.Migrate(ctx, cfg.Database.MigratorURL, appRole); err != nil {
 				return err
 			}
 			a, err := app.New(ctx, cfg, logger(), app.Options{})
@@ -476,11 +524,23 @@ invites the first owner.`,
 			if err != nil && !errors.Is(err, auth.ErrEmailTaken) {
 				return err
 			}
+			next := "  systemctl enable --now cms@blue cms-worker\n  cms doctor\n"
+			if name != "" {
+				next = fmt.Sprintf("  systemctl enable --now cms-blue@%[1]s cms-worker@%[1]s cms-upgrade@%[1]s.timer cms-backup@%[1]s.timer\n"+
+					"  echo blue > /opt/cms/sites/%[1]s/active-colour\n"+
+					"  echo 'proxy_pass http://127.0.0.1:%[2]d;' > /etc/nginx/cms/%[1]s-upstream.conf\n"+
+					"  certbot certonly --nginx -d %[3]s\n"+
+					"  CMS_CONFIG=%[4]s cms nginx > /etc/nginx/sites-available/%[3]s && ln -s ../sites-available/%[3]s /etc/nginx/sites-enabled/\n"+
+					"  nginx -t && systemctl reload nginx\n"+
+					"  CMS_CONFIG=%[4]s cms doctor\n", name, ports[0], domain, configOut)
+			}
 			return out(map[string]any{"config": configOut, "invite_url": link}, func(w io.Writer) {
-				fmt.Fprintf(w, "Installed.\n\nConfig: %s\nOwner invite (valid 7 days): %s\n\nNext:\n  systemctl enable --now cms@blue cms-worker\n  cms doctor\n", configOut, link)
+				fmt.Fprintf(w, "Installed.\n\nConfig: %s\nOwner invite (valid 7 days): %s\n\nNext:\n%s", configOut, link, next)
 			})
 		},
 	}
+	cmd.Flags().StringVar(&name, "name", "", "this site's name, when the server runs several (paths, units, database: see above)")
+	cmd.Flags().IntSliceVar(&ports, "ports", nil, "with --name: the blue and green ports, e.g. 8101,8102")
 	cmd.Flags().StringVar(&siteDir, "site", "/opt/cms/site/current", "site bundle directory")
 	cmd.Flags().StringVar(&domain, "domain", "", "public hostname, e.g. example.com")
 	cmd.Flags().StringVar(&superURL, "db-super-url", "", "Postgres superuser URL (used once, not stored)")
@@ -540,8 +600,7 @@ in place (spec 9.6).`,
 			if err != nil {
 				return err
 			}
-			script := "/opt/cms/deploy.sh"
-			c := exec.CommandContext(cmd.Context(), script, dir)
+			c := exec.CommandContext(cmd.Context(), "/opt/cms/deploy.sh", append(cfg.DeployArgs(), dir)...)
 			c.Stdout, c.Stderr = os.Stderr, os.Stderr
 			if err := c.Run(); err != nil {
 				return fmt.Errorf("deploy failed (the previous version is still serving): %w", err)
@@ -566,8 +625,9 @@ func upgradeSite(ctx context.Context, cfg *config.Config, checkOnly bool) error 
 	if err != nil {
 		return err
 	}
+	home := cfg.DeployHome()
 	current := ""
-	if t, err := os.Readlink("/opt/cms/site/current"); err == nil {
+	if t, err := os.Readlink(filepath.Join(home, "site/current")); err == nil {
 		current = filepath.Base(t)
 	}
 	if current == rel.TagName {
@@ -578,19 +638,19 @@ func upgradeSite(ctx context.Context, cfg *config.Config, checkOnly bool) error 
 			fmt.Fprintf(w, "Site update available: %s -> %s\n", current, rel.TagName)
 		})
 	}
-	dir, err := fetchAsset(ctx, cfg, rel, "site.tar.gz", filepath.Join("/opt/cms/site/releases", rel.TagName), cfg.Upgrade.SiteKey())
+	dir, err := fetchAsset(ctx, cfg, rel, "site.tar.gz", filepath.Join(home, "site/releases", rel.TagName), cfg.Upgrade.SiteKey())
 	if err != nil {
 		return err
 	}
 	currentDir := ""
 	if current != "" {
-		currentDir = "/opt/cms/site/current"
+		currentDir = filepath.Join(home, "site/current")
 	}
 	if err := checkBundleIdentity(dir, currentDir, prefix); err != nil {
 		_ = os.RemoveAll(dir)
 		return fmt.Errorf("refusing site bundle %s (the current bundle is still serving): %w", rel.TagName, err)
 	}
-	c := exec.CommandContext(ctx, "/opt/cms/deploy.sh", "--site", dir)
+	c := exec.CommandContext(ctx, "/opt/cms/deploy.sh", append(cfg.DeployArgs(), "--site", dir)...)
 	c.Stdout, c.Stderr = os.Stderr, os.Stderr
 	if err := c.Run(); err != nil {
 		return fmt.Errorf("site deploy failed (the previous bundle is still serving): %w", err)
@@ -687,12 +747,30 @@ func fetchAsset(ctx context.Context, cfg *config.Config, rel *release, want, des
 	if !strings.Contains(string(sumData), got+"  "+want) {
 		return "", errors.New("checksum mismatch: refusing to install")
 	}
-	if err := os.MkdirAll(dest, 0o755); err != nil {
+	// Unpack beside dest and rename it into place: several sites on one
+	// server share core releases, and one may already be running from dest.
+	if _, err := os.Stat(dest); err == nil {
+		return dest, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return "", err
 	}
-	x := exec.CommandContext(ctx, "tar", "-xzf", archive, "-C", dest)
+	tmpDir, err := os.MkdirTemp(filepath.Dir(dest), "."+filepath.Base(dest)+"-")
+	if err != nil {
+		return "", err
+	}
+	x := exec.CommandContext(ctx, "tar", "-xzf", archive, "-C", tmpDir)
 	if outb, err := x.CombinedOutput(); err != nil {
+		_ = os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("unpack: %s", outb)
+	}
+	_ = os.Chmod(tmpDir, 0o755) //nolint:gosec // a release directory
+	if err := os.Rename(tmpDir, dest); err != nil {
+		_ = os.RemoveAll(tmpDir)
+		if _, serr := os.Stat(dest); serr == nil {
+			return dest, nil // another site unpacked it first
+		}
+		return "", err
 	}
 	return dest, nil
 }
