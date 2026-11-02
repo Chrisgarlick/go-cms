@@ -101,7 +101,8 @@ func runCheck(ctx context.Context, siteDir string) error {
 	if errs := a.Renderer.Theme().Validate(); len(errs) > 0 {
 		return errors.Join(errs...)
 	}
-	n, err := fixtures.Load(sys, a.Site().FS, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings, Q: a.DB.Q, Redirects: a.Redirects})
+	n, err := fixtures.Load(sys, a.Site().FS, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings, Q: a.DB.Q, Redirects: a.Redirects,
+		Media: a.Media, Files: a.Site().FS})
 	if err != nil {
 		return fmt.Errorf("fixtures: %w", err)
 	}

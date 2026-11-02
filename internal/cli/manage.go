@@ -622,7 +622,7 @@ func contentCmd() *cobra.Command {
 				return errors.New("--update and --skip-existing can't be used together")
 			}
 			r, err := fixtures.Import(ctx, data, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings,
-				Q: a.DB.Q, Redirects: a.Redirects}, opt)
+				Q: a.DB.Q, Redirects: a.Redirects, Media: a.Media, Files: os.DirFS(filepath.Dir(args[0]))}, opt)
 			if err != nil {
 				return err
 			}

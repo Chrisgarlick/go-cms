@@ -365,7 +365,8 @@ func runDev(ctx context.Context, siteDir string, port int, reset bool) error {
 		if u, err := a.DB.Q.GetUserByEmail(ctx, "dev@localhost"); err == nil {
 			fctx = actor.With(ctx, &actor.Actor{Kind: actor.KindUser, UserID: u.ID, Role: rbac.Owner, Label: u.Email})
 		}
-		count, err := fixtures.Load(fctx, a.Site().FS, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings, Q: a.DB.Q, Redirects: a.Redirects})
+		count, err := fixtures.Load(fctx, a.Site().FS, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings, Q: a.DB.Q, Redirects: a.Redirects,
+			Media: a.Media, Files: a.Site().FS})
 		if err != nil {
 			log.Warn("sample content failed to load", "err", err)
 		} else if count > 0 {

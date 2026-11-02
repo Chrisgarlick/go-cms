@@ -1,11 +1,16 @@
 package fixtures_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"image"
+	"image/png"
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/google/uuid"
 
 	"cms/internal/app"
 	"cms/internal/content"
@@ -159,4 +164,37 @@ func TestLoadAllFixtureFiles(t *testing.T) {
 	if err != nil || n != 2 {
 		t.Fatalf("loaded %d: %v", n, err)
 	}
+}
+
+// An entry's image is uploaded and set as its featured image; importing it
+// again reuses the upload.
+func TestImportImage(t *testing.T) {
+	a, _ := testutil.NewApp(t, "blog")
+	ctx := app.SystemCtx(context.Background(), "test")
+	var png bytes.Buffer
+	_ = pngEncode(&png)
+	s := services(a)
+	s.Media, s.Files = a.Media, fstest.MapFS{"media/cover.png": {Data: png.Bytes()}}
+	file := []byte("entries:\n  - { type: post, title: Pic, slug: pic, publish: true, image: media/cover.png, image_alt: A cover }\n")
+	r, err := fixtures.Import(ctx, file, s, fixtures.ImportOptions{Update: true})
+	if err != nil || r.Created != 1 {
+		t.Fatalf("import: %+v %v", r, err)
+	}
+	row, _ := a.DB.Q.EntryByTypeSlug(ctx, dbqParams("post", "pic"))
+	e, _ := a.Content.Get(ctx, row.ID)
+	if e.Meta.FeaturedImage == "" {
+		t.Fatal("no featured image")
+	}
+	m, err := a.Media.Get(ctx, uuid.MustParse(e.Meta.FeaturedImage))
+	if err != nil || m.Alt != "A cover" {
+		t.Errorf("media: %+v %v", m, err)
+	}
+	if r, err := fixtures.Import(ctx, file, s, fixtures.ImportOptions{Update: true}); err != nil || r.Unchanged != 1 {
+		t.Errorf("re-import: %+v %v", r, err)
+	}
+}
+
+func pngEncode(w *bytes.Buffer) error {
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	return png.Encode(w, img)
 }

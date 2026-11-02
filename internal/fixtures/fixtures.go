@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"cms/internal/content"
 	"cms/internal/db/dbq"
 	"cms/internal/fields"
+	"cms/internal/media"
 	"cms/internal/menus"
 	"cms/internal/redirects"
 	"cms/internal/richtext"
@@ -67,6 +69,11 @@ type Entry struct {
 	PublishedAt string      `yaml:"published_at"`
 	SEO         content.SEO `yaml:"seo"`
 	Template    string      `yaml:"template"`
+	// Image is the featured image: a file path, relative to the content
+	// file (or the site bundle for its own fixtures). It's uploaded to the
+	// media library; the same file again reuses the upload.
+	Image    string `yaml:"image"`
+	ImageAlt string `yaml:"image_alt"`
 }
 
 type MenuItem struct {
@@ -84,6 +91,10 @@ type Services struct {
 	Q        *dbq.Queries
 	// Redirects is optional: without it, a file's redirects are skipped.
 	Redirects *redirects.Service
+	// Media and Files are optional: with both, entries' images (paths in
+	// Files) are uploaded; without, images are skipped.
+	Media *media.Service
+	Files fs.FS
 }
 
 // Load imports a site's fixtures (cms dev on an empty database, cms check):
@@ -244,6 +255,13 @@ func Import(ctx context.Context, data []byte, s Services, opt ImportOptions) (Im
 		if parent != nil {
 			meta.ParentID = parent.String()
 		}
+		if fe.Image != "" && s.Media != nil && s.Files != nil {
+			id, err := uploadImage(ctx, s, fe.Image, fe.ImageAlt)
+			if err != nil {
+				return res, fmt.Errorf("entry %q: image %s: %w", fe.Title, fe.Image, err)
+			}
+			meta.FeaturedImage = id
+		}
 		meta.Terms = nil
 		if len(fe.Terms) > 0 {
 			meta.Terms = map[string][]string{}
@@ -363,6 +381,21 @@ func Import(ctx context.Context, data []byte, s Services, opt ImportOptions) (Im
 		}
 	}
 	return res, nil
+}
+
+// uploadImage adds a file to the media library (or finds the same file
+// there) and returns its id.
+func uploadImage(ctx context.Context, s Services, name, alt string) (string, error) {
+	f, err := s.Files.Open(strings.TrimPrefix(path.Clean("/"+name), "/"))
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = f.Close() }()
+	m, _, err := s.Media.Upload(ctx, media.UploadInput{Filename: path.Base(name), Body: f, Alt: alt})
+	if err != nil {
+		return "", err
+	}
+	return m.ID.String(), nil
 }
 
 var tableDelim = regexp.MustCompile(`^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$`)
