@@ -36,6 +36,7 @@ Where the implementation differs from v0.3, the code won and this document was u
   - **Tailwind build step** (4.12): a theme opts in with `theme/tailwind/input.css` (plus `tailwind.config.js`).
     - `cms tailwind` compiles it to `theme/assets/tailwind.css`, which is committed, so servers never build CSS. `cms dev` rebuilds as files change; `cms check` (so site CI) fails when the committed file is stale.
     - It uses the standalone Tailwind CLI v3.4.17 (first-party plugins such as typography included): no Node. The binary is downloaded on first use into the user cache directory and checked against SHA-256 sums held in the cms source. `CMS_TAILWIND_BIN` points at a binary instead (offline machines).
+  - **Query-string redirects** (4.5): an exact rule's source can carry a query pattern, `/blog?category={c}` → `/blog/category/{c}`. Each part is a literal (`page=1`) or a capture (`{name}`, path-escaped into the target); every part must be present once, and the request's other parameters are dropped. The most specific rule wins (more parts, then more literals), ahead of a plain rule for the same path. The pattern is stored in the source in a canonical order, so no schema change. Because pre-rendered pages would otherwise answer first, the generated Caddy and nginx configs send every request with a query string to Go.
   - **Several sites on one server, behind nginx** (9.5): `cms install --name <site> --ports BLUE,GREEN`, per-site units (`cms-blue@`, `cms-green@`, `cms-worker@`, timers), `deploy.sh --name`, and `cms nginx`, which prints the server blocks; deploys only switch an upstream include.
 - **Deferred, not yet built:** magic-link login, S3 storage driver and imgproxy (local disk only for now), point-in-time recovery (`cms backup` is pg_dump plus media), reusable blocks, admin command palette, saved list views, admin i18n, `cms schema export --go|--ts`. These stay on the roadmap and are not required to run a blog or brochure site.
 - **Tests:** Go tests run against embedded Postgres; Playwright E2E checks every admin and public page for CSP violations and axe errors, plus the passkey flow (10).
@@ -421,7 +422,7 @@ cache: static                  # static | uncached
 
 - Redirect types: 301, 302, 307, 308, 410 (gone), 451
 - Match types: exact, prefix, wildcard, regex (with capture groups: `/old/(.*)` → `/new/$1`)
-- Query string handling: ignore, preserve, or match
+- Query string handling: ignore, preserve, or match (an exact rule such as `/blog?category={c}` → `/blog/category/{c}`; other parameters dropped)
 - Case-insensitive and trailing-slash normalisation options
 - Source host scoping (for multi-domain setups)
 - **Automatic redirects** created when a published slug or parent changes, or when an entry is trashed (configurable)

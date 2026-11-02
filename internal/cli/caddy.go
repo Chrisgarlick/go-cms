@@ -61,13 +61,15 @@ func caddyCmd() *cobra.Command {
 			fmt.Fprintf(&b, "\t# Fingerprinted theme assets.\n\t@assets path /assets/*\n\thandle @assets {\n\t\t@exists file\n\t\theader @exists Cache-Control \"public, max-age=31536000, immutable\"\n")
 			fmt.Fprintf(&b, "\t\tfile_server {\n\t\t\tprecompressed br gzip\n\t\t}\n\t}\n\n")
 			fmt.Fprintf(&b, "\t# Pre-rendered pages: served from disk without touching Go.\n")
+			// A request with a query string always reaches Go: redirect rules can
+			// match on it (/blog?page=2 → /blog/page/2).
 			if a.Site().Config.Slash() {
-				fmt.Fprintf(&b, "\t@rendered file {path}/index.html {path}\n")
+				fmt.Fprintf(&b, "\t@rendered {\n\t\tfile {path}/index.html {path}\n\t\texpression {query} == \"\"\n\t}\n")
 				fmt.Fprintf(&b, "\thandle @rendered {\n")
 			} else {
 				// URLs are published without a trailing slash: /about is served from
 				// about/index.html, and /about/ falls through to Go, which redirects.
-				fmt.Fprintf(&b, "\t@rendered {\n\t\tfile {path}/index.html {path}\n\t\tnot path_regexp ^/.+/$\n\t}\n")
+				fmt.Fprintf(&b, "\t@rendered {\n\t\tfile {path}/index.html {path}\n\t\tnot path_regexp ^/.+/$\n\t\texpression {query} == \"\"\n\t}\n")
 				fmt.Fprintf(&b, "\thandle @rendered {\n\t\trewrite * {file_match.relative}\n")
 			}
 			fmt.Fprintf(&b, "\t\theader Content-Security-Policy %q\n\t\theader Cache-Control \"public, max-age=0, must-revalidate\"\n", csp)
