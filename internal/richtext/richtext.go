@@ -315,7 +315,7 @@ func render(b *strings.Builder, n *Node, o Options, ids map[string]int) {
 		renderChildren(b, n.Content, o, ids)
 		b.WriteString("</blockquote>\n")
 	case "codeBlock":
-		b.WriteString("<pre><code")
+		b.WriteString(`<pre tabindex="0"><code`) // focusable: a long line scrolls sideways (WCAG 2.1.1)
 		if lang := strAttr(n.Attrs, "language"); lang != "" {
 			b.WriteString(` class="language-` + html.EscapeString(lang) + `"`)
 		}

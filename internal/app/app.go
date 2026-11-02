@@ -234,7 +234,7 @@ func (a *App) Prepare(ctx context.Context) error {
 	}
 	want := a.Site().Hash + ":" + a.Renderer.ThemeHash() + ":" + version.Version
 	if a.Settings.String(ctx, settings.BundleHash, "") != want {
-		if err := a.Jobs.Enqueue(ctx, jobs.RenderRebuild{Reason: "site bundle or theme changed"}); err != nil {
+		if err := a.Jobs.Enqueue(ctx, jobs.RenderRebuild{Reason: "site bundle or theme changed: " + want}); err != nil {
 			return err
 		}
 		if err := a.Settings.SetSystem(ctx, settings.BundleHash, want); err != nil {

@@ -38,13 +38,16 @@ func (RenderInvalidate) InsertOpts() river.InsertOpts {
 }
 
 // RenderRebuild re-renders the whole site (theme, bundle or settings change).
+// Requests with the same reason within 30 s are merged; a different reason
+// (a new bundle hash, another setting) always gets its own re-render, so a
+// second change made while the first re-render runs isn't lost.
 type RenderRebuild struct {
 	Reason string `json:"reason"`
 }
 
 func (RenderRebuild) Kind() string { return "render.rebuild" }
 func (RenderRebuild) InsertOpts() river.InsertOpts {
-	return river.InsertOpts{Queue: QueueRender, MaxAttempts: 3, UniqueOpts: river.UniqueOpts{ByPeriod: 30 * time.Second}}
+	return river.InsertOpts{Queue: QueueRender, MaxAttempts: 3, UniqueOpts: river.UniqueOpts{ByArgs: true, ByPeriod: 30 * time.Second}}
 }
 
 // SchedulerSweep publishes and unpublishes due entries.

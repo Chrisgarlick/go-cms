@@ -109,14 +109,14 @@ var (
 	urlAttrRe      = regexp.MustCompile(`\s(?:href|src)="([^"]*)"`)
 	allowedSchemes = map[string]bool{"": true, "http": true, "https": true, "mailto": true, "tel": true}
 	allowedTags    = map[string]bool{"p": true, "h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true, "ul": true, "ol": true, "li": true, "blockquote": true, "pre": true, "code": true, "hr": true, "br": true, "strong": true, "em": true, "s": true, "u": true, "sub": true, "sup": true, "a": true}
-	allowedAttrs   = map[string]bool{"id": true, "href": true, "class": true, "start": true, "target": true, "rel": true}
+	allowedAttrs   = map[string]bool{"id": true, "href": true, "class": true, "start": true, "target": true, "rel": true, "tabindex": true}
 )
 
 func TestFromMarkdown(t *testing.T) {
 	n := FromMarkdown("# Title\n\nSome **bold** and [a link](https://x.test) and [bad](javascript:x).\n\n- one\n- two\n\n```go\nfmt.Println(\"<x>\")\n```\n\n> quoted\n")
 	out := string(HTML(n, Options{}))
 	for _, want := range []string{"<h1>Title</h1>", "<strong>bold</strong>", `<a href="https://x.test" rel="noopener">a link</a>`,
-		"<li><p>one</p>", `<pre><code class="language-go">fmt.Println(&#34;&lt;x&gt;&#34;)</code></pre>`, "<blockquote>"} {
+		"<li><p>one</p>", `<pre tabindex="0"><code class="language-go">fmt.Println(&#34;&lt;x&gt;&#34;)</code></pre>`, "<blockquote>"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in %s", want, out)
 		}

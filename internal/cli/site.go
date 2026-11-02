@@ -415,12 +415,17 @@ func watchBundle(ctx context.Context, a *app.App) {
 		if err != nil || b.Hash == last {
 			continue
 		}
-		// Templates or the Tailwind sources changed: rebuild the CSS. A
-		// changed stylesheet changes the hash again on the next tick.
+		// Templates or the Tailwind sources changed: rebuild the CSS first and
+		// load the bundle again, so one edit is one reload and one re-render
+		// (re-renders within 30 s of each other are merged, so a second one
+		// for the new stylesheet would be dropped).
 		if wrote, err := tailwind.Build(ctx, a.Cfg.Paths.Site); err != nil {
 			a.Log.Error("tailwind build failed (keeping the previous CSS)", "err", err)
 		} else if wrote {
 			a.Log.Info("tailwind.css rebuilt")
+			if b, err = site.LoadDir(a.Cfg.Paths.Site); err != nil {
+				continue
+			}
 		}
 		b.AddBuiltinBlocks(blocks.Builtin())
 		if err := b.Finalize(); err != nil {
@@ -442,7 +447,7 @@ func watchBundle(ctx context.Context, a *app.App) {
 				a.Log.Error("template error", "err", e)
 			}
 		}
-		_ = a.Jobs.Enqueue(ctx, jobs.RenderRebuild{Reason: "files changed"})
+		_ = a.Jobs.Enqueue(ctx, jobs.RenderRebuild{Reason: "files changed: " + last})
 		a.Log.Info("site reloaded", "hash", last)
 	}
 }
