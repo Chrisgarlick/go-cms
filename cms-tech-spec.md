@@ -44,6 +44,9 @@ Where the implementation differs from v0.3, the code won and this document was u
   - **Archive titles:** a content type's `archive_title` and `archive_description` are its archive page's title and meta description (default: the plural label and the site description). Taxonomies take `title_format` and `description_format` with `{term}` (`Articles tagged "{term}"`); a term's own `seo_title` and `seo_description` fields win.
   - **Re-renders aren't lost:** a full re-render is merged only with requests for the same reason (bundle hash, setting) within 30 s, so a second change made while one re-render runs gets its own. `cms dev` builds Tailwind before reloading the bundle, so one edit is one reload.
   - **Code blocks are focusable** (`<pre tabindex="0">`, rich text and the code block): a long line scrolls sideways, and keyboard users must be able to reach it (WCAG 2.1.1).
+  - **Admin list columns and filters** (4.1, 4.13): a content type's `list_columns` picks the list screen's columns, from `title` (always first), `status`, `author`, `updated_at`, `published_at`, `menu_order` and the type's own top-level fields (a select shows its option label, a true boolean "Yes"); an unknown name fails validation. Each `filterable: true` select or radio field gets a row of filter links (filters combine, and are kept across the status tabs, search and paging). The list follows the type's `sort` when it is `menu_order` or `title`.
+  - **Private types** (`public: false`, no `url`): never rendered, absent from the public API, search and the sitemap; they exist only in the admin, for notes such as a roadmap.
+  - **One `cms dev` per site** (5.4): a second one, `--reset` included, refuses to start while the first one's Postgres is running, instead of deleting the database and page cache under it.
   - **Several sites on one server, behind nginx** (9.5): `cms install --name <site> --ports BLUE,GREEN`, per-site units (`cms-blue@`, `cms-green@`, `cms-worker@`, timers), `deploy.sh --name`, and `cms nginx`, which prints the server blocks; deploys only switch an upstream include.
 - **Deferred, not yet built:** magic-link login, S3 storage driver and imgproxy (local disk only for now), point-in-time recovery (`cms backup` is pg_dump plus media), reusable blocks, admin command palette, saved list views, admin i18n, `cms schema export --go|--ts`. These stay on the roadmap and are not required to run a blog or brochure site.
 - **Tests:** Go tests run against embedded Postgres; Playwright E2E checks every admin and public page for CSP violations and axe errors, plus the passkey flow (10).
@@ -254,7 +257,7 @@ Each site is one instance of the same core binary plus a **site bundle**:
   - Public/private visibility, whether it has its own archive and single URL
   - URL pattern (e.g. `/blog/{slug}`, `/products/{category}/{slug}`)
   - Default field groups and allowed blocks
-  - Default sort order and admin list columns
+  - Default sort order and admin list columns (`list_columns`: `title`, `status`, `author`, `updated_at`, `published_at`, `menu_order` or the type's own fields)
   - Taxonomies attached
   - Template hierarchy overrides
   - Cacheability: `static` (default), `uncached` (always rendered by Go)
@@ -556,7 +559,7 @@ Not planned. If a site needs comments, use an external service embedded as a cli
 
 - Server-rendered with `html/template`, progressive JS only where needed (editor, media, menus), no SPA
 - Dashboard: recent activity, scheduled items, drafts with unpublished changes, system health, security summary, quick actions
-- List screens: sortable, filterable, saved views, column picker, bulk actions, keyboard navigation
+- List screens: sortable, filterable, saved views, column picker, bulk actions, keyboard navigation. Built so far: columns from `list_columns`, and filter links for `filterable` select and radio fields
 - Editor: block editor, field groups, sidebar with status/schedule/taxonomies/SEO, revision panel, live preview, conflict screen
 - Global search / command palette (Cmd+K)
 - Keyboard shortcuts
@@ -783,7 +786,7 @@ Checks: config validity, DB connectivity and version, required extensions (`pg_t
 
 ### 5.4 `cms install` and `cms dev`
 - `cms install` (server): takes a site bundle (or the default theme), writes config, generates the KEK and session keys into systemd credentials (or prints them for a secret manager), creates the `cms_migrator` and `cms_app` roles (given a Postgres superuser URL once, never stored), runs migrations, and creates your Owner account with a passkey, and optionally the client's first Admin (invite link). Target: fresh server to working site in under 5 minutes
-- `cms dev` (laptop, inside a site repo): starts an embedded Postgres (no Docker needed), runs migrations, loads the repo's `fixtures/`, serves with live reload of templates, blocks, content types and theme assets. In the core repo it also live-reloads Go and admin assets. `docker-compose.yml` remains for MinIO and Mailpit
+- `cms dev` (laptop, inside a site repo): starts an embedded Postgres (no Docker needed), runs migrations, loads the repo's `fixtures/`, serves with live reload of templates, blocks, content types and theme assets. In the core repo it also live-reloads Go and admin assets. `docker-compose.yml` remains for MinIO and Mailpit. Its state is `.cms/dev` in the site; a second `cms dev` for the same site (even with `--reset`) refuses to start while the first one's Postgres runs
 
 ### 5.5 `cms new` and `cms make`
 

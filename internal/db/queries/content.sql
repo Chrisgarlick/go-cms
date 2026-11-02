@@ -164,7 +164,7 @@ SELECT EXISTS (
 -- name: ListEntries :many
 SELECT e.id, e.type, e.status, e.version, e.slug, e.parent_id, e.author_id, e.locale, e.menu_order,
     e.draft_title, e.draft_slug, e.published_version, e.published_at, e.scheduled_at,
-    e.created_at, e.updated_at, e.published_revision_id,
+    e.created_at, e.updated_at, e.published_revision_id, e.draft_fields,
     COALESCE(u.display_name, '') AS author_name,
     count(*) OVER () AS total
 FROM entries e
@@ -175,6 +175,7 @@ WHERE e.type = @type
   AND (sqlc.narg(q)::text IS NULL OR e.draft_title ILIKE '%' || sqlc.narg(q) || '%')
   AND (sqlc.narg(author_id)::uuid IS NULL OR e.author_id = sqlc.narg(author_id))
   AND (sqlc.narg(parent_id)::uuid IS NULL OR e.parent_id = sqlc.narg(parent_id))
+  AND (sqlc.narg(fields)::jsonb IS NULL OR e.draft_fields @> sqlc.narg(fields)::jsonb)
 ORDER BY
   CASE WHEN @sort::text = 'title' THEN lower(e.draft_title) END ASC,
   CASE WHEN @sort::text = 'menu_order' THEN e.menu_order END ASC,

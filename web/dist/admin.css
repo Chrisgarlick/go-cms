@@ -195,6 +195,10 @@ input[type=checkbox], input[type=radio] { width: 1rem; height: 1rem; accent-colo
 .tab span { color: var(--text-3); margin-left: 0.2rem; font-variant-numeric: tabular-nums; }
 .tab:hover { color: var(--text); }
 .tab.is-active { background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+.list-filter { display: flex; align-items: center; gap: 0.25rem 0.75rem; flex-wrap: wrap; margin: -0.25rem 0 1rem; font-size: 0.84rem; }
+.list-filter a { color: var(--text-2); font-weight: 500; }
+.list-filter a:hover { color: var(--text); }
+.list-filter a.is-active { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .search { min-width: 16rem; }
 .search input { padding-left: 2rem !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b94' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: 0.6rem 50% !important; background-size: 0.95rem !important; }
 

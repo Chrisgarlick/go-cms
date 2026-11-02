@@ -9,27 +9,38 @@
 </header>
 <div class="toolbar">
   <nav class="tabs" aria-label="Filter by status">
-    <a class="tab{{if eq .Data.Status ""}} is-active{{end}}" href="?">All <span>{{index .Data.Counts "all"}}</span></a>
-    <a class="tab{{if eq .Data.Status "published"}} is-active{{end}}" href="?status=published">Published <span>{{index .Data.Counts "published"}}</span></a>
-    <a class="tab{{if eq .Data.Status "draft"}} is-active{{end}}" href="?status=draft">Drafts <span>{{index .Data.Counts "draft"}}</span></a>
-    <a class="tab{{if eq .Data.Status "scheduled"}} is-active{{end}}" href="?status=scheduled">Scheduled <span>{{index .Data.Counts "scheduled"}}</span></a>
-    <a class="tab{{if eq .Data.Status "trashed"}} is-active{{end}}" href="?status=trashed">Trash <span>{{index .Data.Counts "trashed"}}</span></a>
+    <a class="tab{{if eq .Data.Status ""}} is-active{{end}}" href="{{withQuery .Data.Base "status" ""}}">All <span>{{index .Data.Counts "all"}}</span></a>
+    <a class="tab{{if eq .Data.Status "published"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "published"}}">Published <span>{{index .Data.Counts "published"}}</span></a>
+    <a class="tab{{if eq .Data.Status "draft"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "draft"}}">Drafts <span>{{index .Data.Counts "draft"}}</span></a>
+    <a class="tab{{if eq .Data.Status "scheduled"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "scheduled"}}">Scheduled <span>{{index .Data.Counts "scheduled"}}</span></a>
+    <a class="tab{{if eq .Data.Status "trashed"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "trashed"}}">Trash <span>{{index .Data.Counts "trashed"}}</span></a>
   </nav>
-  <form class="search" role="search"><input type="hidden" name="status" value="{{.Data.Status}}">
+  <form class="search" role="search"><input type="hidden" name="status" value="{{.Data.Status}}">{{range .Data.Filters}}{{if .Active}}<input type="hidden" name="{{.Field.Name}}" value="{{.Active}}">{{end}}{{end}}
     <label class="visually-hidden" for="q">Search {{lower $t.Label.Plural}}</label>
     <input id="q" type="search" name="q" value="{{.Data.Query}}" placeholder="Search titles…"></form>
 </div>
+{{range .Data.Filters}}{{$f := .}}
+<nav class="list-filter" aria-label="Filter by {{lower .Label}}"><span class="muted">{{.Label}}:</span>
+  <a{{if not .Active}} class="is-active" aria-current="true"{{end}} href="{{withQuery $.Data.Base $f.Field.Name "" "page" ""}}">All</a>
+  {{range .Field.Options}}<a{{if eq $f.Active .Value}} class="is-active" aria-current="true"{{end}} href="{{withQuery $.Data.Base $f.Field.Name .Value "page" ""}}">{{or .Label .Value}}</a>{{end}}
+</nav>
+{{end}}
 {{if .Data.Rows}}
 <div class="table-wrap">
 <table class="table">
-  <thead><tr><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Author</th><th scope="col">{{if eq .Data.Status "scheduled"}}Scheduled{{else}}Updated{{end}}</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+  <thead><tr>{{range .Data.Columns}}<th scope="col">{{if and (eq .Key "updated_at") (eq $.Data.Status "scheduled")}}Scheduled{{else}}{{.Label}}{{end}}</th>{{end}}<th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
-  {{range .Data.Rows}}
+  {{range $row := .Data.Rows}}
   <tr>
-    <td class="cell-title"><a href="/admin/entries/{{.ID}}">{{or .DraftTitle "Untitled"}}</a>{{if .ParentID}}<span class="muted"> · child page</span>{{end}}<span class="cell-sub">/{{.DraftSlug}}</span></td>
-    <td>{{if and .PublishedVersion (ne (deref2 .PublishedVersion) .Version) (ne .Status "trashed")}}{{template "status" "pending"}}{{else}}{{template "status" .Status}}{{end}}</td>
-    <td class="muted">{{.AuthorName}}</td>
-    <td class="muted">{{if .ScheduledAt}}{{date (deref .ScheduledAt)}}{{else}}{{ago .UpdatedAt}}{{end}}</td>
+    {{range $.Data.Columns}}{{if .Field}}<td>{{listCell $row .Field}}</td>
+    {{else if eq .Key "title"}}<td class="cell-title"><a href="/admin/entries/{{$row.ID}}">{{or $row.DraftTitle "Untitled"}}</a>{{if $row.ParentID}}<span class="muted"> · child page</span>{{end}}{{if $.Data.Type.Pattern}}<span class="cell-sub">/{{$row.DraftSlug}}</span>{{end}}</td>
+    {{else if eq .Key "status"}}<td>{{if and $row.PublishedVersion (ne (deref2 $row.PublishedVersion) $row.Version) (ne $row.Status "trashed")}}{{template "status" "pending"}}{{else}}{{template "status" $row.Status}}{{end}}</td>
+    {{else if eq .Key "author"}}<td class="muted">{{$row.AuthorName}}</td>
+    {{else if eq .Key "updated_at"}}<td class="muted">{{if $row.ScheduledAt}}{{date (deref $row.ScheduledAt)}}{{else}}{{ago $row.UpdatedAt}}{{end}}</td>
+    {{else if eq .Key "published_at"}}<td class="muted">{{if $row.PublishedAt}}{{date (deref $row.PublishedAt)}}{{end}}</td>
+    {{else if eq .Key "menu_order"}}<td class="muted">{{$row.MenuOrder}}</td>
+    {{end}}{{end}}
+    {{with $row}}
     <td class="cell-actions">
       {{if eq .Status "trashed"}}
       <form method="post" action="/admin/entries/{{.ID}}/restore"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm">Restore</button></form>
@@ -37,13 +48,13 @@
       {{else}}
       <a class="btn btn-ghost btn-sm" href="/admin/entries/{{.ID}}">Edit</a>
       {{end}}
-    </td>
+    </td>{{end}}
   </tr>
   {{end}}
   </tbody>
 </table>
 </div>
-{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" (printf "status=%s&q=%s&" .Data.Status .Data.Query))}}
+{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" .Data.Base)}}
 {{else}}
 <div class="empty-state">
   {{template "icon" (or $t.Icon "file")}}

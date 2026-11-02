@@ -917,7 +917,7 @@ func (q *Queries) ListContentTypeHashes(ctx context.Context) ([]ListContentTypeH
 const listEntries = `-- name: ListEntries :many
 SELECT e.id, e.type, e.status, e.version, e.slug, e.parent_id, e.author_id, e.locale, e.menu_order,
     e.draft_title, e.draft_slug, e.published_version, e.published_at, e.scheduled_at,
-    e.created_at, e.updated_at, e.published_revision_id,
+    e.created_at, e.updated_at, e.published_revision_id, e.draft_fields,
     COALESCE(u.display_name, '') AS author_name,
     count(*) OVER () AS total
 FROM entries e
@@ -928,12 +928,13 @@ WHERE e.type = $1
   AND ($3::text IS NULL OR e.draft_title ILIKE '%' || $3 || '%')
   AND ($4::uuid IS NULL OR e.author_id = $4)
   AND ($5::uuid IS NULL OR e.parent_id = $5)
+  AND ($6::jsonb IS NULL OR e.draft_fields @> $6::jsonb)
 ORDER BY
-  CASE WHEN $6::text = 'title' THEN lower(e.draft_title) END ASC,
-  CASE WHEN $6::text = 'menu_order' THEN e.menu_order END ASC,
-  CASE WHEN $6::text = 'published_at' THEN e.published_at END DESC NULLS LAST,
+  CASE WHEN $7::text = 'title' THEN lower(e.draft_title) END ASC,
+  CASE WHEN $7::text = 'menu_order' THEN e.menu_order END ASC,
+  CASE WHEN $7::text = 'published_at' THEN e.published_at END DESC NULLS LAST,
   e.updated_at DESC
-LIMIT $8 OFFSET $7
+LIMIT $9 OFFSET $8
 `
 
 type ListEntriesParams struct {
@@ -942,6 +943,7 @@ type ListEntriesParams struct {
 	Q        *string
 	AuthorID *uuid.UUID
 	ParentID *uuid.UUID
+	Fields   []byte
 	Sort     string
 	Off      int32
 	Lim      int32
@@ -965,6 +967,7 @@ type ListEntriesRow struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	PublishedRevisionID *uuid.UUID
+	DraftFields         json.RawMessage
 	AuthorName          string
 	Total               int64
 }
@@ -976,6 +979,7 @@ func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Lis
 		arg.Q,
 		arg.AuthorID,
 		arg.ParentID,
+		arg.Fields,
 		arg.Sort,
 		arg.Off,
 		arg.Lim,
@@ -1005,6 +1009,7 @@ func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Lis
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.PublishedRevisionID,
+			&i.DraftFields,
 			&i.AuthorName,
 			&i.Total,
 		); err != nil {

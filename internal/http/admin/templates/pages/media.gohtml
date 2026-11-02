@@ -27,7 +27,7 @@
   </li>
   {{end}}
 </ul>
-{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" (printf "kind=%s&q=%s&" .Data.Kind .Data.Query))}}
+{{template "pager" (dict "Page" .Data.Page "Pages" .Data.Pages "Base" (printf "kind=%s&q=%s" (urlquery .Data.Kind) (urlquery .Data.Query)))}}
 {{else}}
 <div class="empty-state">{{template "icon" "image"}}<h2>No files here yet</h2><p class="muted">Drag files onto this page or use Upload.</p></div>
 {{end}}

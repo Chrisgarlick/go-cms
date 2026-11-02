@@ -463,6 +463,11 @@ func (b *Bundle) Finalize() error {
 		if err := fields.Check(t.Fields, ""); err != nil {
 			errs = append(errs, fmt.Errorf("content type %s: %w", name, err))
 		}
+		for _, c := range t.ListColumns {
+			if !ListBuiltins[c] && t.Field(c) == nil {
+				errs = append(errs, fmt.Errorf("content type %s: list_columns: %q is neither a field nor one of title, status, author, updated_at, published_at, menu_order", name, c))
+			}
+		}
 		for _, tx := range t.Taxonomies {
 			tax, ok := b.Taxonomies[tx]
 			if !ok {
@@ -656,7 +661,22 @@ func (t *ContentType) Has(feature string) bool {
 }
 
 func (t *ContentType) Pattern() *Pattern { return t.pattern }
-func (t *ContentType) IsPublic() bool    { return t.Public == nil || *t.Public }
+
+// Field is the type's own top-level field called name, or nil.
+func (t *ContentType) Field(name string) *fields.Field {
+	for i := range t.Fields {
+		if t.Fields[i].Name == name {
+			return &t.Fields[i]
+		}
+	}
+	return nil
+}
+
+// ListBuiltins are the admin list columns that aren't custom fields.
+var ListBuiltins = map[string]bool{"title": true, "status": true, "author": true, "updated_at": true,
+	"published_at": true, "menu_order": true}
+
+func (t *ContentType) IsPublic() bool { return t.Public == nil || *t.Public }
 func (t *ContentType) InSitemap() bool {
 	return t.Sitemap != nil && *t.Sitemap && t.IsPublic() && t.URL != ""
 }

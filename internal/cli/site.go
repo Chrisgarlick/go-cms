@@ -11,7 +11,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -284,12 +286,33 @@ func devCmd() *cobra.Command {
 	return cmd
 }
 
+// devPostgresPID is the pid of the dev Postgres running in dir, or 0.
+func devPostgresPID(dir string) int {
+	b, err := os.ReadFile(filepath.Join(dir, "postmaster.pid"))
+	if err != nil {
+		return 0
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(strings.SplitN(string(b), "\n", 2)[0]))
+	if err != nil || pid <= 0 {
+		return 0
+	}
+	if p, err := os.FindProcess(pid); err != nil || p.Signal(syscall.Signal(0)) != nil {
+		return 0
+	}
+	return pid
+}
+
 func runDev(ctx context.Context, siteDir string, port int, reset bool) error {
 	siteDir, _ = filepath.Abs(siteDir)
 	if _, err := os.Stat(filepath.Join(siteDir, "site.yaml")); err != nil {
 		return errors.New("no site.yaml here: run `cms new my-site` first, or pass --site")
 	}
 	state := filepath.Join(siteDir, ".cms", "dev")
+	// Two dev servers on one site would share (and --reset would delete)
+	// one database and page cache.
+	if pid := devPostgresPID(filepath.Join(state, "pg", "data")); pid > 0 {
+		return fmt.Errorf("another cms dev is already running for this site (its Postgres is pid %d): use that one, or stop it first", pid)
+	}
 	if reset {
 		if err := os.RemoveAll(state); err != nil {
 			return err

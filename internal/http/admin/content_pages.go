@@ -2,7 +2,9 @@ package admin
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -83,14 +85,98 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 type listData struct {
-	Type   *site.ContentType
-	Rows   []dbq.ListEntriesRow
-	Total  int64
-	Status string
-	Query  string
-	Page   int
-	Pages  int
-	Counts map[string]int64
+	Type    *site.ContentType
+	Rows    []dbq.ListEntriesRow
+	Total   int64
+	Status  string
+	Query   string
+	Page    int
+	Pages   int
+	Counts  map[string]int64
+	Columns []listColumn
+	Filters []listFilter
+	// Base is the query string the pager and filter links build on.
+	Base string
+}
+
+// listColumn is one column of a content list: a built-in (title, status,
+// author, updated_at, published_at, menu_order) or a custom field.
+type listColumn struct {
+	Key   string
+	Label string
+	Field *fields.Field
+}
+
+// listFilter is a filterable select or radio field, shown as a row of links.
+// Filters combine.
+type listFilter struct {
+	Field  *fields.Field
+	Label  string
+	Active string
+}
+
+var listBuiltinLabels = map[string]string{"title": "Title", "status": "Status", "author": "Author",
+	"updated_at": "Updated", "published_at": "Published", "menu_order": "Order"}
+
+func listColumns(ct *site.ContentType) []listColumn {
+	cols := []listColumn{{Key: "title", Label: "Title"}}
+	for _, c := range ct.ListColumns {
+		if c == "title" {
+			continue
+		}
+		if l, ok := listBuiltinLabels[c]; ok {
+			cols = append(cols, listColumn{Key: c, Label: l})
+		} else if f := ct.Field(c); f != nil {
+			cols = append(cols, listColumn{Key: c, Label: fieldLabel(f), Field: f})
+		}
+	}
+	return cols
+}
+
+func fieldLabel(f *fields.Field) string {
+	if f.Label != "" {
+		return f.Label
+	}
+	return fields.Humanize(f.Name)
+}
+
+// listCell is a custom field's value as list text: a select's option
+// label, Yes for a true boolean, a list joined with commas.
+func listCell(row dbq.ListEntriesRow, f *fields.Field) string {
+	var m map[string]any
+	if json.Unmarshal(row.DraftFields, &m) != nil {
+		return ""
+	}
+	label := func(v any) string {
+		s := fmt.Sprint(v)
+		for _, o := range f.Options {
+			if o.Value == s {
+				return o.Label
+			}
+		}
+		return s
+	}
+	switch v := m[f.Name].(type) {
+	case nil:
+		return ""
+	case bool:
+		if v {
+			return "Yes"
+		}
+		return ""
+	case string:
+		return label(v)
+	case []any:
+		parts := make([]string, 0, len(v))
+		for _, x := range v {
+			parts = append(parts, label(x))
+		}
+		return strings.Join(parts, ", ")
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	default:
+		return ""
+	}
 }
 
 func (h *Handler) contentList(w http.ResponseWriter, r *http.Request) {
@@ -107,11 +193,31 @@ func (h *Handler) contentList(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	sort := "updated"
-	if ct.Hierarchical {
+	if ct.Hierarchical || ct.Sort.Field == "menu_order" {
 		sort = "menu_order"
+	} else if ct.Sort.Field == "title" {
+		sort = "title"
 	}
-	rows, total, err := h.a.Content.List(r.Context(), content.ListFilter{Type: ct.Name, Status: status, Query: q, Sort: sort,
-		Limit: per, Offset: int32((page - 1) * per)})
+	lf := content.ListFilter{Type: ct.Name, Status: status, Query: q, Sort: sort,
+		Limit: per, Offset: int32((page - 1) * per)}
+	base := url.Values{"status": {status}, "q": {q}}
+	var filters []listFilter
+	for i := range ct.Fields {
+		f := &ct.Fields[i]
+		if !f.Filterable || (f.Type != fields.Select && f.Type != fields.Radio) {
+			continue
+		}
+		lfi := listFilter{Field: f, Label: fieldLabel(f)}
+		if v := r.URL.Query().Get(f.Name); v != "" {
+			if lf.Fields == nil {
+				lf.Fields = map[string]string{}
+			}
+			lfi.Active, lf.Fields[f.Name] = v, v
+			base.Set(f.Name, v)
+		}
+		filters = append(filters, lfi)
+	}
+	rows, total, err := h.a.Content.List(r.Context(), lf)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -129,7 +235,8 @@ func (h *Handler) contentList(w http.ResponseWriter, r *http.Request) {
 	}
 	pages := int((total + per - 1) / per)
 	h.render(w, r, "content-list", http.StatusOK, h.page(r, ct.Label.Plural, "content",
-		listData{Type: ct, Rows: rows, Total: total, Status: status, Query: q, Page: page, Pages: pages, Counts: counts}))
+		listData{Type: ct, Rows: rows, Total: total, Status: status, Query: q, Page: page, Pages: pages, Counts: counts,
+			Columns: listColumns(ct), Filters: filters, Base: base.Encode()}))
 }
 
 func (h *Handler) contentNew(w http.ResponseWriter, r *http.Request) {

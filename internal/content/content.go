@@ -1159,6 +1159,8 @@ type ListFilter struct {
 	Sort     string
 	Limit    int32
 	Offset   int32
+	// Fields keeps entries whose draft fields have all these values.
+	Fields map[string]string
 }
 
 func (s *Service) List(ctx context.Context, f ListFilter) ([]dbq.ListEntriesRow, int64, error) {
@@ -1168,10 +1170,14 @@ func (s *Service) List(ctx context.Context, f ListFilter) ([]dbq.ListEntriesRow,
 	if f.Limit <= 0 || f.Limit > 200 {
 		f.Limit = 50
 	}
-	rows, err := s.DB.Q.ListEntries(ctx, dbq.ListEntriesParams{
+	p := dbq.ListEntriesParams{
 		Type: f.Type, Status: nilIfEmpty(f.Status), Q: nilIfEmpty(f.Query), AuthorID: f.AuthorID,
 		Sort: f.Sort, Lim: f.Limit, Off: f.Offset,
-	})
+	}
+	if len(f.Fields) > 0 {
+		p.Fields, _ = json.Marshal(f.Fields)
+	}
+	rows, err := s.DB.Q.ListEntries(ctx, p)
 	if err != nil {
 		return nil, 0, err
 	}

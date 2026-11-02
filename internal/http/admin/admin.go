@@ -90,6 +90,21 @@ func (h *Handler) loadTemplates() {
 		"kb":        func(n int64) string { return humanBytes(n) },
 		"str":       func(v any) string { return fmt.Sprint(v) },
 		"hasPrefix": strings.HasPrefix,
+		"listCell":  listCell,
+		// withQuery is base (an encoded query string) with each key set to
+		// its value, or removed when the value is empty, as "?…" or "?".
+		"withQuery": func(base string, kv ...string) template.URL {
+			v, _ := url.ParseQuery(base)
+			for i := 0; i+1 < len(kv); i += 2 {
+				v.Set(kv[i], kv[i+1])
+			}
+			for k := range v {
+				if v.Get(k) == "" {
+					v.Del(k)
+				}
+			}
+			return template.URL("?" + v.Encode()) //nolint:gosec // encoded by url.Values
+		},
 		"deref2": func(v *int32) int32 {
 			if v == nil {
 				return 0
