@@ -138,6 +138,9 @@ done
 
 log "stopping $(unit "$active") (graceful drain)"
 systemctl stop "$(unit "$active")"
+# The live colour is the one that comes back after a reboot.
+systemctl enable --quiet "$(unit "$idle")"
+systemctl disable --quiet "$(unit "$active")"
 echo "$idle" >"$CMS_HOME/active-colour"
 ln -sfn "$CMS_HOME/$idle" "$CMS_HOME/current"
 log "restarting the worker"
