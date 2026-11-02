@@ -90,33 +90,76 @@ func Load(ctx context.Context, fsys fs.FS, s Services) (int, error) {
 	if err != nil {
 		return 0, nil
 	}
-	n, err := Import(ctx, data, s, false)
+	r, err := Import(ctx, data, s, ImportOptions{})
 	if err != nil {
-		return n, fmt.Errorf("fixtures/content.yaml: %w", err)
+		return r.Created, fmt.Errorf("fixtures/content.yaml: %w", err)
 	}
-	return n, nil
+	return r.Created, nil
 }
 
-// Import loads a content file (the fixtures format) into the database. With
-// skipExisting, entries whose type and slug already exist are left alone, so
-// an import can be re-run (used by `cms content import` at a migration).
-func Import(ctx context.Context, data []byte, s Services, skipExisting bool) (int, error) {
+// ImportOptions control how an import treats what's already there.
+type ImportOptions struct {
+	// SkipExisting leaves entries whose type and slug already exist alone.
+	SkipExisting bool
+	// Update brings existing entries (matched by type and slug) in line with
+	// the file: title, excerpt, SEO, template, terms, fields and blocks. An
+	// entry that already matches is left untouched (no new revision).
+	Update bool
+	// SkipFields are field names an update never writes: values edited by
+	// hand on an otherwise generated entry (e.g. "notes").
+	SkipFields []string
+	// Prune lists types whose entries not in the file are moved to the
+	// trash (generated reference pages whose source went away).
+	Prune []string
+}
+
+// ImportResult counts what an import did.
+type ImportResult struct {
+	Created, Updated, Unchanged, Pruned int
+}
+
+// Import loads a content file (the fixtures format) into the database. Terms
+// and redirects that already exist are reused or updated, so any import can
+// be re-run; see ImportOptions for entries.
+func Import(ctx context.Context, data []byte, s Services, opt ImportOptions) (ImportResult, error) {
+	var res ImportResult
 	var f File
 	if err := yaml.Unmarshal(data, &f); err != nil {
-		return 0, err
+		return res, err
 	}
 	for k, v := range f.Settings {
 		if err := s.Settings.Set(ctx, k, v); err != nil {
-			return 0, err
+			return res, err
 		}
 	}
 	termIDs := map[string]map[string]string{}
 	for tax, list := range f.Terms {
 		termIDs[tax] = map[string]string{}
+		existing, err := s.Content.Terms(ctx, tax)
+		if err != nil {
+			return res, fmt.Errorf("terms %s: %w", tax, err)
+		}
 		for _, t := range list {
+			var found *dbq.ListTermsRow
+			for i := range existing {
+				if strings.EqualFold(existing[i].Name, t.Name) || (t.Slug != "" && existing[i].Slug == t.Slug) {
+					found = &existing[i]
+					break
+				}
+			}
+			if found != nil {
+				if opt.Update && t.Description != "" && t.Description != found.Description {
+					if _, err := s.Content.UpdateTerm(ctx, found.ID, content.TermInput{Taxonomy: tax, Name: found.Name, Slug: found.Slug,
+						Description: t.Description}); err != nil {
+						return res, fmt.Errorf("term %s/%s: %w", tax, t.Name, err)
+					}
+				}
+				termIDs[tax][strings.ToLower(t.Name)] = found.ID.String()
+				continue
+			}
 			tm, err := s.Content.CreateTerm(ctx, content.TermInput{Taxonomy: tax, Name: t.Name, Slug: t.Slug, Description: t.Description})
 			if err != nil {
-				return 0, fmt.Errorf("term %s/%s: %w", tax, t.Name, err)
+				return res, fmt.Errorf("term %s/%s: %w", tax, t.Name, err)
 			}
 			termIDs[tax][strings.ToLower(t.Name)] = tm.ID.String()
 		}
@@ -124,12 +167,22 @@ func Import(ctx context.Context, data []byte, s Services, skipExisting bool) (in
 	// Two passes: create every entry first, so entry fields can point at
 	// entries later in the file (services ↔ projects), then fill them in.
 	slugIDs := map[string]uuid.UUID{}
-	created := make([]*content.Entry, len(f.Entries))
+	targets := make([]*content.Entry, len(f.Entries))
+	isNew := make([]bool, len(f.Entries))
 	parents := make([]*uuid.UUID, len(f.Entries))
+	inFile := map[string]bool{}
 	for i, fe := range f.Entries {
-		if skipExisting && fe.Slug != "" {
+		if fe.Slug != "" && (opt.SkipExisting || opt.Update) {
 			if ex, err := s.Q.EntryByTypeSlug(ctx, dbq.EntryByTypeSlugParams{Type: fe.Type, DraftSlug: fe.Slug}); err == nil {
 				slugIDs[fe.Type+"/"+fe.Slug] = ex.ID
+				inFile[ex.ID.String()] = true
+				if opt.Update {
+					e, err := s.Content.Get(ctx, ex.ID)
+					if err != nil {
+						return res, fmt.Errorf("entry %q: %w", fe.Title, err)
+					}
+					targets[i] = e
+				}
 				continue
 			}
 		}
@@ -141,22 +194,41 @@ func Import(ctx context.Context, data []byte, s Services, skipExisting bool) (in
 		}
 		e, err := s.Content.Create(ctx, in)
 		if err != nil {
-			return 0, fmt.Errorf("entry %q: %w", fe.Title, err)
+			return res, fmt.Errorf("entry %q: %w", fe.Title, err)
 		}
-		created[i], parents[i] = e, in.ParentID
+		targets[i], isNew[i], parents[i] = e, true, in.ParentID
 		slugIDs[fe.Type+"/"+e.DraftSlug] = e.ID
+		inFile[e.ID.String()] = true
 	}
-	n := 0
+	skip := map[string]bool{}
+	for _, f := range opt.SkipFields {
+		skip[f] = true
+	}
+	order := 0
 	for i, fe := range f.Entries {
-		e := created[i]
+		e := targets[i]
 		if e == nil {
-			continue // already existed
+			order++
+			continue // existing, left alone
 		}
-		in := content.CreateInput{ParentID: parents[i]}
+		parent := parents[i]
+		if !isNew[i] && fe.Parent != "" {
+			if pid, ok := slugIDs[fe.Type+"/"+fe.Parent]; ok {
+				parent = &pid
+			}
+		}
 		meta := content.Meta{Excerpt: fe.Excerpt, SEO: fe.SEO, Template: fe.Template}
-		if in.ParentID != nil {
-			meta.ParentID = in.ParentID.String()
+		if !isNew[i] {
+			// Keep what the file doesn't set: the featured image chosen in
+			// the admin, say.
+			meta = e.Meta
+			meta.Excerpt, meta.SEO, meta.Template = fe.Excerpt, fe.SEO, fe.Template
+			meta.ParentID = ""
 		}
+		if parent != nil {
+			meta.ParentID = parent.String()
+		}
+		meta.Terms = nil
 		if len(fe.Terms) > 0 {
 			meta.Terms = map[string][]string{}
 			for tax, names := range fe.Terms {
@@ -178,7 +250,7 @@ func Import(ctx context.Context, data []byte, s Services, skipExisting bool) (in
 			tree = append(tree, map[string]any{"id": blocks.NewID(), "type": "rich-text", "data": map[string]any{"body": body}})
 		case nil:
 		default:
-			return n, fmt.Errorf("entry %q: body must be Markdown or a ProseMirror document", fe.Title)
+			return res, fmt.Errorf("entry %q: body must be Markdown or a ProseMirror document", fe.Title)
 		}
 		for _, b := range fe.Blocks {
 			if b["id"] == nil {
@@ -186,73 +258,243 @@ func Import(ctx context.Context, data []byte, s Services, skipExisting bool) (in
 			}
 			tree = append(tree, b)
 		}
-		bj, _ := json.Marshal(tree)
 		resolveRefs(s.Content.Site().FieldsFor(fe.Type), fe.Fields, slugIDs)
-		fj, _ := json.Marshal(fe.Fields)
+		fieldsMap := map[string]any{}
+		for k, v := range fe.Fields {
+			fieldsMap[k] = v
+		}
+		if !isNew[i] && len(skip) > 0 {
+			var cur map[string]any
+			_ = json.Unmarshal(e.DraftFields, &cur)
+			for name := range skip {
+				if v, ok := cur[name]; ok {
+					fieldsMap[name] = v
+				} else {
+					delete(fieldsMap, name)
+				}
+			}
+		}
+		bj, _ := json.Marshal(tree)
+		fj, _ := json.Marshal(fieldsMap)
+		if !isNew[i] && sameEntry(e, fe.Title, meta, fj, bj) {
+			if fe.Publish && (!e.IsPublished() || e.HasUnpublishedChanges()) {
+				if _, err := s.Content.Publish(ctx, e.ID, e.Version); err != nil {
+					return res, fmt.Errorf("publish %q: %w", fe.Title, err)
+				}
+			}
+			res.Unchanged++
+			order++
+			continue
+		}
 		e, err := s.Content.Save(ctx, content.SaveInput{ID: e.ID, ExpectedVersion: e.Version, Title: fe.Title, Slug: e.DraftSlug,
 			Meta: meta, Fields: fj, Blocks: bj})
 		if err != nil {
-			return n, fmt.Errorf("entry %q: %w", fe.Title, err)
+			return res, fmt.Errorf("entry %q: %w", fe.Title, err)
 		}
 		if fe.Publish {
 			if _, err := s.Content.Publish(ctx, e.ID, e.Version); err != nil {
-				return n, fmt.Errorf("publish %q: %w", fe.Title, err)
+				return res, fmt.Errorf("publish %q: %w", fe.Title, err)
 			}
 			var at time.Time
 			if fe.PublishedAt != "" {
 				if at, err = time.Parse(time.RFC3339, fe.PublishedAt); err != nil {
-					return n, fmt.Errorf("entry %q: published_at: %w", fe.Title, err)
+					return res, fmt.Errorf("entry %q: published_at: %w", fe.Title, err)
 				}
-			} else if fe.DaysAgo > 0 {
+			} else if fe.DaysAgo > 0 && isNew[i] {
 				at = time.Now().Add(-time.Duration(fe.DaysAgo) * 24 * time.Hour)
 			}
 			if !at.IsZero() {
 				if err := s.Q.SetPublishedAt(ctx, dbq.SetPublishedAtParams{ID: e.ID, PublishedAt: &at}); err != nil {
-					return n, err
+					return res, err
 				}
 			}
 		}
 		if fe.FrontPage {
 			if err := s.Settings.Set(ctx, settings.FrontPage, e.ID.String()); err != nil {
-				return n, err
+				return res, err
 			}
 		}
 		// Keep the file's order for types sorted by menu_order.
-		if err := s.Q.SetEntryOrder(ctx, dbq.SetEntryOrderParams{ID: e.ID, MenuOrder: int32(n)}); err != nil {
-			return n, err
+		if err := s.Q.SetEntryOrder(ctx, dbq.SetEntryOrderParams{ID: e.ID, MenuOrder: int32(order)}); err != nil { //nolint:gosec // small
+			return res, err
 		}
-		n++
+		order++
+		if isNew[i] {
+			res.Created++
+		} else {
+			res.Updated++
+		}
+	}
+	for _, typ := range opt.Prune {
+		n, err := prune(ctx, s, typ, inFile)
+		res.Pruned += n
+		if err != nil {
+			return res, fmt.Errorf("prune %s: %w", typ, err)
+		}
 	}
 	for name, items := range f.Menus {
 		conv := convertMenu(items, slugIDs)
 		if err := s.Menus.Save(ctx, name, name, conv); err != nil {
-			return n, fmt.Errorf("menu %s: %w", name, err)
+			return res, fmt.Errorf("menu %s: %w", name, err)
 		}
 	}
-	if s.Redirects != nil {
-		for _, rd := range f.Redirects {
-			status := rd.Status
-			if status == 0 {
-				status = 301
-			}
-			match := rd.Match
-			if match == "" {
-				match = "exact"
-			}
-			_, err := s.Redirects.Create(ctx, redirects.Input{Source: rd.From, Target: rd.To, MatchType: match, Status: status,
-				PreserveQuery: true, Note: "imported"})
-			if err != nil {
-				return n, fmt.Errorf("redirect %s: %w", rd.From, err)
-			}
+	if s.Redirects != nil && len(f.Redirects) > 0 {
+		if err := importRedirects(ctx, s, f.Redirects); err != nil {
+			return res, err
 		}
 	}
 	for page, vals := range f.Options {
 		b, _ := json.Marshal(vals)
 		if err := s.Settings.SaveOptions(ctx, page, b); err != nil {
-			return n, fmt.Errorf("options %s: %w", page, err)
+			return res, fmt.Errorf("options %s: %w", page, err)
 		}
 	}
-	return n, nil
+	return res, nil
+}
+
+// sameEntry reports whether an entry's working copy already holds this
+// title, meta, fields and blocks (block ids and versions aside: ids are
+// minted per import and saving stamps the version).
+func sameEntry(e *content.Entry, title string, meta content.Meta, fields, tree []byte) bool {
+	if e.DraftTitle != title {
+		return false
+	}
+	mj, _ := json.Marshal(meta)
+	cm, _ := json.Marshal(e.Meta)
+	return jsonEqual(mj, cm, false) && jsonEqual(fields, e.DraftFields, false) && jsonEqual(tree, e.DraftBlocks, true)
+}
+
+func jsonEqual(a, b []byte, ignoreIDs bool) bool {
+	var x, y any
+	if json.Unmarshal(a, &x) != nil || json.Unmarshal(b, &y) != nil {
+		return false
+	}
+	if ignoreIDs {
+		x, y = stripIDs(x), stripIDs(y)
+	}
+	x, y = emptyAsNil(x), emptyAsNil(y)
+	xa, _ := json.Marshal(x)
+	ya, _ := json.Marshal(y)
+	return string(xa) == string(ya)
+}
+
+func stripIDs(v any) any {
+	switch t := v.(type) {
+	case map[string]any:
+		_, isBlock := t["data"]
+		isBlock = isBlock && t["type"] != nil
+		out := map[string]any{}
+		for k, val := range t {
+			if isBlock && (k == "id" || k == "version") {
+				continue
+			}
+			out[k] = stripIDs(val)
+		}
+		return out
+	case []any:
+		out := make([]any, len(t))
+		for i, val := range t {
+			out[i] = stripIDs(val)
+		}
+		return out
+	}
+	return v
+}
+
+// emptyAsNil treats {} and [] like a missing value, as storage does.
+func emptyAsNil(v any) any {
+	switch t := v.(type) {
+	case map[string]any:
+		if len(t) == 0 {
+			return nil
+		}
+		out := map[string]any{}
+		for k, val := range t {
+			if n := emptyAsNil(val); n != nil {
+				out[k] = n
+			}
+		}
+		return out
+	case []any:
+		if len(t) == 0 {
+			return nil
+		}
+		out := make([]any, len(t))
+		for i, val := range t {
+			out[i] = emptyAsNil(val)
+		}
+		return out
+	case string:
+		if t == "" {
+			return nil
+		}
+	}
+	return v
+}
+
+// prune trashes entries of a type that the file didn't mention.
+func prune(ctx context.Context, s Services, typ string, keep map[string]bool) (int, error) {
+	n := 0
+	for {
+		rows, err := s.Q.ListEntries(ctx, dbq.ListEntriesParams{Type: typ, Sort: "created", Lim: 500})
+		if err != nil {
+			return n, err
+		}
+		trashed := 0
+		for _, r := range rows {
+			if keep[r.ID.String()] {
+				continue
+			}
+			if err := s.Content.Trash(ctx, r.ID); err != nil {
+				return n, err
+			}
+			n++
+			trashed++
+		}
+		if trashed == 0 || len(rows) < 500 {
+			return n, nil
+		}
+	}
+}
+
+// importRedirects creates the file's redirects, updating any that exist
+// for the same source and match type.
+func importRedirects(ctx context.Context, s Services, list []Redirect) error {
+	existing, err := s.Q.ListRedirects(ctx)
+	if err != nil {
+		return err
+	}
+	for _, rd := range list {
+		status := rd.Status
+		if status == 0 {
+			status = 301
+		}
+		match := rd.Match
+		if match == "" {
+			match = "exact"
+		}
+		in := redirects.Input{Source: rd.From, Target: rd.To, MatchType: match, Status: status, PreserveQuery: true, Note: "imported"}
+		var found *dbq.Redirect
+		for i := range existing {
+			if existing[i].Host == "" && existing[i].MatchType == match && redirects.SameSource(existing[i].Source, rd.From, match) {
+				found = &existing[i]
+				break
+			}
+		}
+		if found == nil {
+			if _, err := s.Redirects.Create(ctx, in); err != nil {
+				return fmt.Errorf("redirect %s: %w", rd.From, err)
+			}
+			continue
+		}
+		if found.Target == rd.To && int(found.StatusCode) == status {
+			continue
+		}
+		if _, err := s.Redirects.Update(ctx, found.ID, in); err != nil {
+			return fmt.Errorf("redirect %s: %w", rd.From, err)
+		}
+	}
+	return nil
 }
 
 func convertMenu(items []MenuItem, slugs map[string]uuid.UUID) []menus.Item {

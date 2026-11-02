@@ -122,6 +122,19 @@ func normalise(p string) string {
 	return p
 }
 
+// SameSource reports whether a stored source and a source as written (in a
+// fixture, say) are the same rule, after the normalising Create applies.
+func SameSource(stored, written, matchType string) bool {
+	if matchType == "regex" {
+		return stored == strings.TrimSpace(written)
+	}
+	u, err := url.Parse(strings.TrimSpace(written))
+	if err != nil {
+		return false
+	}
+	return stored == normalise(u.Path)
+}
+
 // Lookup finds the rule for a request. host is the request host.
 func (s *Service) Lookup(host, path, rawQuery string) (Match, bool) {
 	t := s.t.Load()

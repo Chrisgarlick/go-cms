@@ -27,6 +27,12 @@ Where the implementation differs from v0.3, the code won and this document was u
     - Bundles can be verified with their own key (`upgrade.site_public_key`).
     - The reusable `site.yml` workflow takes `path`, `tag_prefix` and `publish` inputs and never marks a bundle release "Latest".
   - **`cms content import`** loads a content file in the fixtures format: Markdown or ProseMirror bodies, exact dates, SEO, entry references by slug, and exact or prefix redirects. This is how a site moves onto cms.
+- **Added for kritano.com and docs.kritano.com** (several sites on one server, generated reference pages):
+  - **`cms content import` re-runs** (4.17):
+    - Terms and redirects that already exist are reused; a redirect whose target or status changed is updated.
+    - `--update` brings existing entries (matched by type and slug) in line with the file: title, excerpt, SEO, template, terms, fields and blocks. Anything the file doesn't set, such as a featured image chosen in the admin, is kept. An entry that already matches gets no new revision.
+    - `--skip-field <name>` keeps a field the file must never overwrite, such as hand-written notes on a generated page.
+    - `--prune <type>` moves entries of that type that the file no longer has to the trash.
 - **Deferred, not yet built:** magic-link login, S3 storage driver and imgproxy (local disk only for now), point-in-time recovery (`cms backup` is pg_dump plus media), reusable blocks, admin command palette, saved list views, admin i18n, `cms schema export --go|--ts`. These stay on the roadmap and are not required to run a blog or brochure site.
 - **Tests:** Go tests run against embedded Postgres; Playwright E2E checks every admin and public page for CSP violations and axe errors, plus the passkey flow (10).
 
@@ -592,6 +598,7 @@ limits: { memory_mb: 16, timeout_ms: 50 }
 ### 4.17 Import / export and migration [v1]
 - Export full site or selected types to JSON/NDJSON, including media manifest
 - Import with dry-run, conflict strategies (skip/overwrite/merge) and ID mapping
+  - *Built so far:* `cms content import` (fixtures format) with `--skip-existing`, `--update` (merge by type and slug, unchanged entries untouched), `--skip-field` and `--prune <type>`; terms and redirects are reused, so re-runs are safe. Dry-run is still to do.
 - **WordPress importer [v1.x, when the first WordPress migration is booked]:** WXR file → posts, pages, taxonomies, media, authors and redirects (complete); core Gutenberg blocks mapped to built-in blocks; shortcodes and unknown blocks kept as raw-HTML blocks, with a report of every unmapped item
 - CSV import for entries and redirects
 - Schema export/import (content types, field groups, blocks) for moving between environments (normally via git, see 4.1)
@@ -711,7 +718,8 @@ cms content list|get|create|update|delete
 cms content publish|unpublish|schedule|trash|restore|discard <id>
 cms content revisions <id>
 cms content revert <id> <revision>
-cms content import|export [--type] [--file]
+cms content import <file> [--update [--skip-field f]... | --skip-existing] [--prune type]...
+cms content export [--type] [--file]
 cms content clone <id>
 cms term list|create|update|delete|merge
 cms menu list|get|import|export

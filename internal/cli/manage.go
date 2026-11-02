@@ -596,14 +596,17 @@ func contentCmd() *cobra.Command {
 				return fn(a, ctx, id)
 			}}
 	}
-	var skipExisting bool
+	var opt fixtures.ImportOptions
 	imp := &cobra.Command{
 		Use:   "import <file.yaml>",
 		Short: "Import entries, menus, options and redirects from a content file (fixtures format)",
 		Long: "Loads a content file in the fixtures/content.yaml format into this site's database:\n" +
 			"entries (Markdown or ProseMirror bodies, exact publish dates, SEO), terms, menus,\n" +
-			"options and redirects. Use it to move a site onto cms. With --skip-existing,\n" +
-			"entries whose type and slug already exist are left alone, so it can be re-run.",
+			"options and redirects. Use it to move a site onto cms. Terms and redirects that\n" +
+			"exist are reused, so it can be re-run. Entries are matched by type and slug:\n" +
+			"--skip-existing leaves them alone; --update brings them in line with the file\n" +
+			"(keeping --skip-field fields), and --prune trashes entries of a type the file\n" +
+			"no longer has, for generated pages.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, ctx, err := openApp(cmd, false)
@@ -615,15 +618,28 @@ func contentCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			n, err := fixtures.Import(ctx, data, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings,
-				Q: a.DB.Q, Redirects: a.Redirects}, skipExisting)
+			if opt.Update && opt.SkipExisting {
+				return errors.New("--update and --skip-existing can't be used together")
+			}
+			r, err := fixtures.Import(ctx, data, fixtures.Services{Content: a.Content, Menus: a.Menus, Settings: a.Settings,
+				Q: a.DB.Q, Redirects: a.Redirects}, opt)
 			if err != nil {
 				return err
 			}
-			return out(map[string]any{"entries": n}, func(w io.Writer) { fmt.Fprintf(w, "Imported %d entries.\n", n) })
+			return out(map[string]any{"created": r.Created, "updated": r.Updated, "unchanged": r.Unchanged, "pruned": r.Pruned},
+				func(w io.Writer) {
+					fmt.Fprintf(w, "Imported: %d created, %d updated, %d unchanged", r.Created, r.Updated, r.Unchanged)
+					if len(opt.Prune) > 0 {
+						fmt.Fprintf(w, ", %d moved to the trash", r.Pruned)
+					}
+					fmt.Fprintln(w, ".")
+				})
 		},
 	}
-	imp.Flags().BoolVar(&skipExisting, "skip-existing", false, "leave entries whose type and slug already exist")
+	imp.Flags().BoolVar(&opt.SkipExisting, "skip-existing", false, "leave entries whose type and slug already exist")
+	imp.Flags().BoolVar(&opt.Update, "update", false, "bring existing entries (by type and slug) in line with the file; unchanged ones are left alone")
+	imp.Flags().StringSliceVar(&opt.SkipFields, "skip-field", nil, "with --update, a field the file never overwrites (hand-written notes); repeatable")
+	imp.Flags().StringSliceVar(&opt.Prune, "prune", nil, "move entries of this type that aren't in the file to the trash; repeatable")
 	cmd.AddCommand(imp)
 	cmd.AddCommand(list, create,
 		byID("publish", "Publish the working copy", func(a *appT, ctx ctxT, id uuid.UUID) error {
