@@ -194,7 +194,7 @@ func parseQueryPattern(q string) ([]param, error) {
 		} else if v == "" || strings.ContainsAny(v, "{}") {
 			return nil, fmt.Errorf("query part %q: a value, or {name} to capture it", part)
 		} else if p.value, err = url.QueryUnescape(v); err != nil {
-			return nil, fmt.Errorf("query part %q: %v", part, err)
+			return nil, fmt.Errorf("query part %q: %w", part, err)
 		}
 		out = append(out, p)
 	}
