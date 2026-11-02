@@ -660,6 +660,11 @@ func resolveRefs(defs []fields.Field, vals map[string]any, slugs map[string]uuid
 					list[i] = lookup(list[i], d.Types)
 				}
 			}
+		case fields.RichText:
+			// A content file may give rich text as Markdown.
+			if md, ok := v.(string); ok {
+				vals[d.Name] = richtext.FromMarkdown(md)
+			}
 		}
 	}
 }
