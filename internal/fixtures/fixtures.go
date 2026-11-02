@@ -70,7 +70,7 @@ type Entry struct {
 	SEO         content.SEO `yaml:"seo"`
 	Template    string      `yaml:"template"`
 	// Image is the featured image: a file path, relative to the content
-	// file (or the site bundle for its own fixtures). It's uploaded to the
+	// file (fixtures/ for a site's own fixtures). It's uploaded to the
 	// media library; the same file again reuses the upload.
 	Image    string `yaml:"image"`
 	ImageAlt string `yaml:"image_alt"`
@@ -103,6 +103,12 @@ type Services struct {
 // created.
 func Load(ctx context.Context, fsys fs.FS, s Services) (int, error) {
 	files, _ := fs.Glob(fsys, "fixtures/*.yaml")
+	// Images are relative to the content file, as with cms content import.
+	if s.Files != nil {
+		if sub, err := fs.Sub(s.Files, "fixtures"); err == nil {
+			s.Files = sub
+		}
+	}
 	sort.Slice(files, func(i, j int) bool {
 		if (files[i] == "fixtures/content.yaml") != (files[j] == "fixtures/content.yaml") {
 			return files[i] == "fixtures/content.yaml"
