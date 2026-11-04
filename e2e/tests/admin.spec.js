@@ -40,6 +40,23 @@ test('trashing asks first, in a dialog, and Cancel keeps the entry', async ({ pa
   done();
 });
 
+test('the file picker is a modal dialog: Escape closes it and focus comes back', async ({ page }) => {
+  const done = watch(page);
+  await login(page);
+  await page.goto('/admin/content/post/');
+  await page.click('button:has-text("New post")');
+  await page.waitForSelector('.ed-title');
+  const choose = page.getByRole('button', { name: 'Choose image' });
+  await choose.click();
+  const dialog = page.getByRole('dialog', { name: 'Choose a file' });
+  await expect(dialog).toBeVisible();
+  await a11y(page);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(choose).toBeFocused();
+  done();
+});
+
 for (const path of ['/admin/', '/admin/content/post/', '/admin/media/', '/admin/users/', '/admin/settings/', '/admin/account', '/admin/security/']) {
   test(`admin ${path} has no CSP errors and passes axe`, async ({ page }) => {
     const done = watch(page);
