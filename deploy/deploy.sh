@@ -124,8 +124,21 @@ switch_to() {
   fi
 }
 
+# Pages are cached as rendered. After a switch, the version now serving
+# renders them again, so a theme or template change shows on every page at
+# once, not as each page happens to be edited. A failed rebuild only warns:
+# the site is up, and pages still re-render as they change.
+rebuild_cache() {
+  local saved=$new_bin
+  new_bin=$1
+  log "rebuilding the page cache"
+  cms cache rebuild -q || log "warning: the page cache rebuild failed"
+  new_bin=$saved
+}
+
 log "switching traffic to $idle"
 switch_to "$idle"
+rebuild_cache "$new_bin"
 
 log "watching for ${WATCH_SECONDS}s"
 host=$(cms config show | sed -n 's/.*"BaseURL": "\(.*\)".*/\1/p' | head -1)
@@ -142,6 +155,7 @@ while (( SECONDS < end )); do
       switch_to "$active"
       systemctl stop "$(unit "$idle")"
       [[ $mode == site && -n ${prev_site:-} ]] && ln -sfn "$prev_site" "$CMS_HOME/site/current"
+      rebuild_cache "$CMS_HOME/$active/cms"
       die "health checks failed after the switch; $active is serving again"
     fi
   fi
