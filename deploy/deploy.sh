@@ -68,7 +68,19 @@ else
   new_bin=$CMS_HOME/$active/cms
   ln -sfn "$CMS_HOME/$active" "$CMS_HOME/$idle"
 fi
-cms() { sudo -u cms "$new_bin" --config "$CONFIG" "$@"; }
+# One-off commands run as cms, like the services, and get the key the same
+# way (LoadCredential): the key file itself is root-only (0400), so a plain
+# `sudo -u cms` can't read it and anything that needs it (schema apply)
+# fails with "permission denied".
+KEK=$(dirname "$CONFIG")/kek
+cms() {
+  if [[ -f $KEK ]]; then
+    systemd-run --quiet --pipe --wait --collect --uid=cms --gid=cms \
+      -p LoadCredential=kek:"$KEK" "$new_bin" --config "$CONFIG" "$@"
+  else
+    sudo -u cms "$new_bin" --config "$CONFIG" "$@"
+  fi
+}
 
 log "pre-migration backup"
 cms backup create --keep 14 -q || die "backup failed: refusing to migrate without one"
@@ -116,7 +128,7 @@ log "switching traffic to $idle"
 switch_to "$idle"
 
 log "watching for ${WATCH_SECONDS}s"
-host=$(sudo -u cms "$new_bin" --config "$CONFIG" config show | sed -n 's/.*"BaseURL": "\(.*\)".*/\1/p' | head -1)
+host=$(cms config show | sed -n 's/.*"BaseURL": "\(.*\)".*/\1/p' | head -1)
 fails=0
 end=$((SECONDS + WATCH_SECONDS))
 while (( SECONDS < end )); do
