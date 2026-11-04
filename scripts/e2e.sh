@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Starts a blog starter site with `cms dev` and runs the Playwright suite.
+# Starts a blog starter site with `cms dev` and runs the Playwright suite,
+# or with `shots`, takes the admin screenshots (e2e/shots.mjs).
 set -euo pipefail
 BIN=$(pwd)/bin/cms
 PORT=${PORT:-18081}
@@ -15,4 +16,5 @@ cleanup() {
 trap cleanup EXIT
 for i in $(seq 1 120); do curl -fsS "http://localhost:$PORT/readyz" >/dev/null 2>&1 && break; sleep 1; done
 export CMS_BASE_URL="http://localhost:$PORT" CMS_CREDENTIALS="$site/.cms/dev/credentials"
-cd e2e && npx playwright test
+cd e2e
+if [ "${1:-}" = shots ]; then node shots.mjs; else npx playwright test; fi

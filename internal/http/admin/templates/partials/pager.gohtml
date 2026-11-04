@@ -1,7 +1,7 @@
 {{define "pager"}}{{if gt .Pages 1}}
 <nav class="pager" aria-label="Pagination">
-  {{if gt .Page 1}}<a class="btn btn-ghost" href="{{withQuery .Base "page" (str (sub .Page 1))}}">Previous</a>{{end}}
+  {{if gt .Page 1}}<a class="kit-button" data-variant="ghost" href="{{withQuery .Base "page" (str (sub .Page 1))}}">Previous</a>{{end}}
   <span class="muted">Page {{.Page}} of {{.Pages}}</span>
-  {{if lt .Page .Pages}}<a class="btn btn-ghost" href="{{withQuery .Base "page" (str (add .Page 1))}}">Next</a>{{end}}
+  {{if lt .Page .Pages}}<a class="kit-button" data-variant="ghost" href="{{withQuery .Base "page" (str (add .Page 1))}}">Next</a>{{end}}
 </nav>
 {{end}}{{end}}

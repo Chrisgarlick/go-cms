@@ -21,6 +21,6 @@
     <label class="check"><input type="checkbox" name="discourage"{{if .Data.Discourage}} checked{{end}}> Ask search engines not to index this site (staging sites)</label>
     <label class="field"><span class="label">Extra robots.txt lines</span><textarea name="robots_extra" rows="3" class="mono">{{.Data.RobotsExtra}}</textarea></label>
   </section>
-  <div class="row"><button class="btn btn-primary" type="submit">Save settings</button><span class="muted">Saving re-renders the whole site in the background.</span></div>
+  <div class="row"><button class="kit-button" data-variant="primary" type="submit">Save settings</button><span class="muted">Saving re-renders the whole site in the background.</span></div>
 </form>
 {{end}}

@@ -22,7 +22,7 @@ export function pickMedia({ multiple = false, kind = 'image/' } = {}) {
     const search = h('input', { type: 'search', placeholder: 'Search…', 'aria-label': 'Search media' });
     const fileIn = h('input', { type: 'file', multiple: true, hidden: true, accept: kind === 'image/' ? 'image/*' : null });
     const status = h('span', { class: 'muted' });
-    const chooseBtn = h('button', { type: 'button', class: 'btn btn-primary', disabled: true, onclick: () => done([...selected.values()]) }, 'Choose');
+    const chooseBtn = h('button', { type: 'button', class: 'kit-button', 'data-variant': 'primary', disabled: true, onclick: () => done([...selected.values()]) }, 'Choose');
     let m;
     const done = (items) => { m.close(); resolve(items); };
     const load = async () => {
@@ -64,10 +64,10 @@ export function pickMedia({ multiple = false, kind = 'image/' } = {}) {
     fileIn.addEventListener('change', () => upload([...fileIn.files]));
     search.addEventListener('input', debounce(load, 250));
     const body = h('div', {}, h('div', { class: 'row', style: null }, h('div', { class: 'grow' }, search),
-      h('button', { type: 'button', class: 'btn', onclick: () => fileIn.click() }, icon('upload'), 'Upload'), fileIn), h('div', { class: 'pad' }), grid);
+      h('button', { type: 'button', class: 'kit-button', onclick: () => fileIn.click() }, icon('upload'), 'Upload'), fileIn), h('div', { class: 'pad' }), grid);
     body.addEventListener('dragover', (e) => e.preventDefault());
     body.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer.files.length) upload([...e.dataTransfer.files]); });
-    m = modal(multiple ? 'Choose files' : 'Choose a file', body, [status, h('button', { type: 'button', class: 'btn', onclick: () => done([]) }, 'Cancel'), chooseBtn]);
+    m = modal(multiple ? 'Choose files' : 'Choose a file', body, [status, h('button', { type: 'button', class: 'kit-button', onclick: () => done([]) }, 'Cancel'), chooseBtn]);
     load();
   });
 }
@@ -90,7 +90,7 @@ export function pickEntry(types) {
       } catch (e) { fill(list, h('p', { class: 'error-text' }, e.message)); }
     };
     search.addEventListener('input', debounce(load, 200));
-    m = modal('Choose an entry', h('div', { class: 'stack' }, search, list), [h('button', { type: 'button', class: 'btn', onclick: () => { m.close(); resolve(null); } }, 'Cancel')]);
+    m = modal('Choose an entry', h('div', { class: 'stack' }, search, list), [h('button', { type: 'button', class: 'kit-button', onclick: () => { m.close(); resolve(null); } }, 'Cancel')]);
     load();
   });
 }

@@ -3,14 +3,14 @@
   <div><h1>Dashboard</h1><p class="muted">Welcome back{{with .Session.Name}}, {{.}}{{end}}.</p></div>
 </header>
 {{if .Data.Critical}}
-<a class="alert alert-danger" href="/admin/security/">{{template "icon" "shield"}}<span><strong>{{.Data.Critical}} serious security {{if eq .Data.Critical 1}}finding needs{{else}}findings need{{end}} attention.</strong> Review them on the security page.</span></a>
+<a class="kit-alert alert" data-tone="bad" href="/admin/security/">{{template "icon" "shield"}}<span><strong>{{.Data.Critical}} serious security {{if eq .Data.Critical 1}}finding needs{{else}}findings need{{end}} attention.</strong> Review them on the security page.</span></a>
 {{end}}
 <section class="stat-grid" aria-label="Content overview">
   {{range .Data.Counts}}
-  <a class="stat" href="/admin/content/{{.Type.Name}}/">
-    <span class="stat-label">{{.Type.Label.Plural}}</span>
-    <span class="stat-value">{{.Published}}</span>
-    <span class="stat-sub">published{{if .Drafts}} · {{.Drafts}} draft{{if ne .Drafts 1}}s{{end}}{{end}}{{if .Scheduled}} · {{.Scheduled}} scheduled{{end}}</span>
+  <a class="kit-stat stat" href="/admin/content/{{.Type.Name}}/">
+    <span class="kit-stat-label">{{.Type.Label.Plural}}</span>
+    <span class="kit-stat-value">{{.Published}}</span>
+    <span class="kit-stat-delta"><span>published{{if .Drafts}} · {{.Drafts}} draft{{if ne .Drafts 1}}s{{end}}{{end}}{{if .Scheduled}} · {{.Scheduled}} scheduled{{end}}</span></span>
   </a>
   {{end}}
 </section>

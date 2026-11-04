@@ -9,6 +9,6 @@
   <input type="hidden" name="qr" value="{{.Data.QR}}">
   <label class="field"><span class="label">Code from the app</span>
     <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" class="code-input" required autofocus></label>
-  <button class="btn btn-primary btn-block" type="submit">Turn on two-factor authentication</button>
+  <button class="kit-button btn-block" data-variant="primary" type="submit">Turn on two-factor authentication</button>
 </form>
 {{end}}

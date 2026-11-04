@@ -1,6 +1,6 @@
 // Entry editor. Reads #editor-data, renders the working copy, autosaves it,
 // and publishes through the same services as the CLI and API.
-import { h, fill, icon, iconButton, api, toast, debounce, autosize, slugify } from './ui.js';
+import { h, fill, icon, iconButton, api, toast, debounce, autosize, slugify, ask } from './ui.js';
 import { renderObject } from './fields.js';
 import { blockEditor } from './blocks.js';
 import { cacheMedia, pickMedia, mediaCache, mediaThumb } from './pickers.js';
@@ -32,9 +32,9 @@ function mountEditor(D) {
 
   // --- Top bar
   const statusText = h('span', { class: 'ed-status', role: 'status', 'aria-live': 'polite' });
-  const saveBtn = h('button', { type: 'button', class: 'btn', onclick: () => save(false) }, 'Save draft');
-  const publishBtn = h('button', { type: 'button', class: 'btn btn-primary', onclick: () => publish() }, 'Publish');
-  const previewBtn = h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => openPreview() }, icon('eye'), 'Preview');
+  const saveBtn = h('button', { type: 'button', class: 'kit-button', onclick: () => save(false) }, 'Save draft');
+  const publishBtn = h('button', { type: 'button', class: 'kit-button', 'data-variant': 'primary', onclick: () => publish() }, 'Publish');
+  const previewBtn = h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', onclick: () => openPreview() }, icon('eye'), 'Preview');
   const conflictBar = h('div', { class: 'conflict', hidden: true });
   const top = h('div', { class: 'ed-top' },
     h('a', { class: 'ed-back', href: `/admin/content/${T.name}/` }, icon('chevron-up'), T.label.plural),
@@ -113,7 +113,7 @@ function mountEditor(D) {
     newIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTerm(); } });
     termBoxes[tx.name] = cur;
     side.append(h('details', { class: 'ed-card', open: true }, h('summary', {}, tx.label.plural),
-      h('div', { class: 'ed-card-body' }, list, h('div', { class: 'term-add' }, newIn, h('button', { type: 'button', class: 'btn btn-sm', onclick: addTerm }, 'Add')))));
+      h('div', { class: 'ed-card-body' }, list, h('div', { class: 'term-add' }, newIn, h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: addTerm }, 'Add')))));
   }
 
   let parentSel = null;
@@ -181,7 +181,7 @@ function mountEditor(D) {
     const draw = () => {
       fill(inner, cur ? h('div', { class: 'media-chip media-wide' }, mediaThumb(mediaCache.get(cur), true),
         iconButton('x', 'Remove', () => { cur = ''; draw(); markDirty(); })) : null,
-      h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
+      h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: async () => {
         const p = await pickMedia({ multiple: false, kind: 'image/' });
         if (p.length) { cur = p[0].id; draw(); markDirty(); }
       } }, icon('image'), cur ? 'Replace' : 'Choose image'));
@@ -279,7 +279,9 @@ function mountEditor(D) {
   }
 
   async function action(name, body = {}, confirmText) {
-    if (confirmText && !confirm(confirmText)) return;
+    const labels = { trash: ['Move to trash', true], discard: ['Throw away', true], unpublish: ['Unpublish', false] };
+    const [ok, danger] = labels[name] || ['Confirm', false];
+    if (confirmText && !(await ask(confirmText, { ok, danger }))) return;
     if (dirty) { const ok = await save(false); if (!ok) return; }
     try {
       const res = await api('POST', `/admin/api/entries/${entry.id}/action/${name}`, { version: entry.version, ...body });
@@ -308,25 +310,25 @@ function mountEditor(D) {
     publishBtn.disabled = published && !pending && !dirty;
     const when = h('input', { type: 'datetime-local', 'aria-label': 'Publish at', min: new Date(Date.now() + 60000).toISOString().slice(0, 16) });
     fill(publishCard, 
-      h('div', { class: 'ed-card-head' }, 'Status', h('span', { class: `badge badge-${badge}` }, badge === 'pending' ? 'Unpublished changes' : badge.replace(/^./, (c) => c.toUpperCase()))),
+      h('div', { class: 'ed-card-head' }, 'Status', h('span', { class: 'kit-badge badge', 'data-tone': { published: 'good', scheduled: 'info', pending: 'warn', trashed: 'bad' }[badge] || 'neutral' }, h('span', { class: 'kit-dot', 'aria-hidden': 'true' }), badge === 'pending' ? 'Unpublished changes' : badge.replace(/^./, (c) => c.toUpperCase()))),
       h('div', { class: 'ed-card-body' },
         h('dl', { class: 'ed-meta' },
           published ? [h('dt', {}, 'Published'), h('dd', {}, fmt(entry.published_at))] : null,
           scheduled ? [h('dt', {}, 'Scheduled'), h('dd', {}, fmt(entry.scheduled_at))] : null,
           entry.unpublish_at ? [h('dt', {}, 'Unpublishes'), h('dd', {}, fmt(entry.unpublish_at))] : null,
           h('dt', {}, 'Last saved'), h('dd', {}, fmt(entry.updated_at))),
-        liveURL ? h('a', { class: 'btn btn-ghost btn-sm', href: D.site_url + liveURL, target: '_blank', rel: 'noopener' }, icon('external'), 'View live') : null,
+        liveURL ? h('a', { class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', href: D.site_url + liveURL, target: '_blank', rel: 'noopener' }, icon('external'), 'View live') : null,
         D.can_publish && !scheduled ? h('details', {}, h('summary', { class: 'hint' }, published ? 'Schedule this update' : 'Schedule for later'),
-          h('div', { class: 'row' }, h('div', { class: 'grow' }, when), h('button', { type: 'button', class: 'btn btn-sm', onclick: () => {
+          h('div', { class: 'row' }, h('div', { class: 'grow' }, when), h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: () => {
             if (!when.value) { toast('Choose a date and time', 'error'); return; }
             action('schedule', { at: new Date(when.value).toISOString() });
           } }, icon('clock'), 'Schedule'))) : null,
-        D.can_publish && scheduled ? h('button', { type: 'button', class: 'btn btn-sm', onclick: () => action('unschedule') }, 'Cancel schedule') : null,
+        D.can_publish && scheduled ? h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: () => action('unschedule') }, 'Cancel schedule') : null,
         h('div', { class: 'row' },
-          pending ? h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => action('discard', {}, 'Throw away your changes and go back to the published version?') }, 'Discard changes') : null,
-          D.can_publish && published ? h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => action('unpublish', {}, 'Take this off the site? It stays here as a draft.') }, 'Unpublish') : null,
-          h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => action('clone') }, 'Duplicate'),
-          h('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => action('trash', {}, 'Move this to the trash?') }, 'Trash'))));
+          pending ? h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', onclick: () => action('discard', {}, 'Throw away your changes and go back to the published version?') }, 'Discard changes') : null,
+          D.can_publish && published ? h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', onclick: () => action('unpublish', {}, 'Take this off the site? It stays here as a draft.') }, 'Unpublish') : null,
+          h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', onclick: () => action('clone') }, 'Duplicate'),
+          h('button', { type: 'button', class: 'kit-button btn-danger-text', 'data-variant': 'ghost', 'data-size': 'sm', onclick: () => action('trash', {}, 'Move this to the trash?') }, 'Trash'))));
   }
   renderPublishCard();
 
@@ -353,8 +355,8 @@ function mountEditor(D) {
   function showConflict(current) {
     conflictBar.hidden = false;
     fill(conflictBar, icon('alert'), h('span', {}, 'Someone else saved this entry while you were editing.'),
-      h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { dirty = false; location.reload(); } }, 'Load their version'),
-      h('button', { type: 'button', class: 'btn btn-sm btn-primary', onclick: () => { entry.version = current; conflictBar.hidden = true; save(false); } }, 'Keep mine'));
+      h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: () => { dirty = false; location.reload(); } }, 'Load their version'),
+      h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', 'data-variant': 'primary', onclick: () => { entry.version = current; conflictBar.hidden = true; save(false); } }, 'Keep mine'));
   }
 
   async function loadRevisions() {
@@ -362,8 +364,8 @@ function mountEditor(D) {
       const res = await api('GET', `/admin/api/entries/${entry.id}/revisions`);
       fill(revList, ...(res.revisions || []).map((r) => h('div', { class: 'row' },
         h('div', { class: 'grow' }, h('div', {}, `#${r.Number} · ${r.Kind}`), h('div', { class: 'hint' }, `${fmt(r.CreatedAt)}${r.AuthorName ? ' · ' + r.AuthorName : ''}`)),
-        h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: async () => {
-          if (!confirm(`Restore revision #${r.Number} into the editor? Your current draft is kept in the history.`)) return;
+        h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', onclick: async () => {
+          if (!(await ask(`Restore revision #${r.Number} into the editor? Your current draft is kept in the history.`, { ok: 'Restore' }))) return;
           try { await api('POST', `/admin/api/entries/${entry.id}/revisions/${r.ID}/restore`); location.reload(); } catch (e) { toast(e.message, 'error'); }
         } }, 'Restore'))));
       if (!res.revisions?.length) fill(revList, h('p', { class: 'hint' }, 'No saved revisions yet. Autosaves are not kept as revisions.'));

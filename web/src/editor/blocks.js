@@ -1,6 +1,6 @@
 // Block editor: an ordered (optionally nested) list of schema-driven blocks.
 import Sortable from 'sortablejs';
-import { h, fill, icon, iconButton, uid } from './ui.js';
+import { h, fill, icon, iconButton, uid, ask } from './ui.js';
 import { renderObject } from './fields.js';
 
 const ICONS = { text: 'text', 'rich-text': 'text', heading: 'heading', image: 'image', gallery: 'gallery', embed: 'video', quote: 'quote',
@@ -159,7 +159,7 @@ function renderBlock(b, def, depth, opts, ops) {
       iconButton('plus', 'Add a block below', () => ops.insertAfter(blk)),
       iconButton('copy', 'Duplicate', () => ops.duplicate(blk)),
       iconButton('settings-2', 'Block settings', () => { settingsBox.hidden = !settingsBox.hidden; el.classList.add('is-open'); }),
-      iconButton('trash', 'Remove block', () => { if (isEmpty(fields.get()) || confirm(`Remove this ${def.label || b.type} block?`)) ops.remove(blk); }, 'danger')),
+      iconButton('trash', 'Remove block', async () => { if (isEmpty(fields.get()) || await ask(`Remove this ${def.label || b.type} block?`, { ok: 'Remove', danger: true })) ops.remove(blk); }, 'danger')),
     h('div', { class: 'block-body' }, fields.el, children ? h('div', { class: 'block-children' }, children.el) : null, settingsBox, errBox));
   const blk = {
     el,

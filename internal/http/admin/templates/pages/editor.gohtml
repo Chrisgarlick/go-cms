@@ -1,6 +1,6 @@
 {{define "content"}}
 <div id="editor" class="editor" data-entry="{{.Data.Entry.ID}}">
-  <noscript><p class="flash flash-error">The editor needs JavaScript.</p></noscript>
+  <noscript><p class="kit-alert flash flash-error" data-tone="bad">The editor needs JavaScript.</p></noscript>
   <div class="editor-loading" aria-hidden="true"></div>
 </div>
 <script type="application/json" id="editor-data">{{json .Data}}</script>

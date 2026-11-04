@@ -4,16 +4,16 @@
   <div><h1>{{$t.Label.Plural}}</h1><p class="muted">{{.Data.Total}} {{if eq .Data.Total 1}}entry{{else}}entries{{end}}</p></div>
   <form method="post" action="/admin/content/{{$t.Name}}/new" class="head-actions">
     <input type="hidden" name="csrf" value="{{.CSRF}}">
-    <button class="btn btn-primary" type="submit">{{template "icon" "plus"}} New {{lower $t.Label.Singular}}</button>
+    <button class="kit-button" data-variant="primary" type="submit">{{template "icon" "plus"}} New {{lower $t.Label.Singular}}</button>
   </form>
 </header>
 <div class="toolbar">
-  <nav class="tabs" aria-label="Filter by status">
-    <a class="tab{{if eq .Data.Status ""}} is-active{{end}}" href="{{withQuery .Data.Base "status" ""}}">All <span>{{index .Data.Counts "all"}}</span></a>
-    <a class="tab{{if eq .Data.Status "published"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "published"}}">Published <span>{{index .Data.Counts "published"}}</span></a>
-    <a class="tab{{if eq .Data.Status "draft"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "draft"}}">Drafts <span>{{index .Data.Counts "draft"}}</span></a>
-    <a class="tab{{if eq .Data.Status "scheduled"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "scheduled"}}">Scheduled <span>{{index .Data.Counts "scheduled"}}</span></a>
-    <a class="tab{{if eq .Data.Status "trashed"}} is-active{{end}}" href="{{withQuery .Data.Base "status" "trashed"}}">Trash <span>{{index .Data.Counts "trashed"}}</span></a>
+  <nav class="kit-segmented" aria-label="Filter by status">
+    <a {{if eq .Data.Status ""}}aria-current="page" {{end}}href="{{withQuery .Data.Base "status" ""}}">All <span>{{index .Data.Counts "all"}}</span></a>
+    <a {{if eq .Data.Status "published"}}aria-current="page" {{end}}href="{{withQuery .Data.Base "status" "published"}}">Published <span>{{index .Data.Counts "published"}}</span></a>
+    <a {{if eq .Data.Status "draft"}}aria-current="page" {{end}}href="{{withQuery .Data.Base "status" "draft"}}">Drafts <span>{{index .Data.Counts "draft"}}</span></a>
+    <a {{if eq .Data.Status "scheduled"}}aria-current="page" {{end}}href="{{withQuery .Data.Base "status" "scheduled"}}">Scheduled <span>{{index .Data.Counts "scheduled"}}</span></a>
+    <a {{if eq .Data.Status "trashed"}}aria-current="page" {{end}}href="{{withQuery .Data.Base "status" "trashed"}}">Trash <span>{{index .Data.Counts "trashed"}}</span></a>
   </nav>
   <form class="search" role="search"><input type="hidden" name="status" value="{{.Data.Status}}">{{range .Data.Filters}}{{if .Active}}<input type="hidden" name="{{.Field.Name}}" value="{{.Active}}">{{end}}{{end}}
     <label class="visually-hidden" for="q">Search {{lower $t.Label.Plural}}</label>
@@ -26,8 +26,8 @@
 </nav>
 {{end}}
 {{if .Data.Rows}}
-<div class="table-wrap">
-<table class="table">
+<div class="kit-table-wrap" role="region" aria-label="{{$t.Label.Plural}}" tabindex="0">
+<table class="kit-table table">
   <thead><tr>{{range .Data.Columns}}<th scope="col">{{if and (eq .Key "updated_at") (eq $.Data.Status "scheduled")}}Scheduled{{else}}{{.Label}}{{end}}</th>{{end}}<th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {{range $row := .Data.Rows}}
@@ -43,10 +43,10 @@
     {{with $row}}
     <td class="cell-actions">
       {{if eq .Status "trashed"}}
-      <form method="post" action="/admin/entries/{{.ID}}/restore"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm">Restore</button></form>
-      <form method="post" action="/admin/entries/{{.ID}}/delete" data-confirm="Delete this entry permanently? This cannot be undone."><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn btn-ghost btn-sm btn-danger-text">Delete forever</button></form>
+      <form method="post" action="/admin/entries/{{.ID}}/restore"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="kit-button" data-variant="ghost" data-size="sm">Restore</button></form>
+      <form method="post" action="/admin/entries/{{.ID}}/delete" data-confirm="Delete this entry permanently? This cannot be undone."><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="kit-button btn-danger-text" data-variant="ghost" data-size="sm">Delete forever</button></form>
       {{else}}
-      <a class="btn btn-ghost btn-sm" href="/admin/entries/{{.ID}}">Edit</a>
+      <a class="kit-button" data-variant="ghost" data-size="sm" href="/admin/entries/{{.ID}}">Edit</a>
       {{end}}
     </td>{{end}}
   </tr>
@@ -59,7 +59,7 @@
 <div class="empty-state">
   {{template "icon" (or $t.Icon "file")}}
   <h2>{{if .Data.Query}}No {{lower $t.Label.Plural}} match “{{.Data.Query}}”{{else if eq .Data.Status "trashed"}}The trash is empty{{else}}No {{lower $t.Label.Plural}} yet{{end}}</h2>
-  {{if not .Data.Query}}<form method="post" action="/admin/content/{{$t.Name}}/new"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn btn-primary">{{template "icon" "plus"}} Create the first one</button></form>{{end}}
+  {{if not .Data.Query}}<form method="post" action="/admin/content/{{$t.Name}}/new"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="kit-button" data-variant="primary">{{template "icon" "plus"}} Create the first one</button></form>{{end}}
 </div>
 {{end}}
 {{end}}

@@ -1,9 +1,18 @@
 // Behaviour for server-rendered admin pages (no inline scripts: strict CSP).
-import { api, toast, h } from './editor/ui.js';
+import { api, toast, h, ask } from './editor/ui.js';
 
-document.addEventListener('submit', (e) => {
+// form[data-confirm] asks first, in kit's dialog: the confirm button says
+// what the form's own button says, in red when that one is.
+document.addEventListener('submit', async (e) => {
   const f = e.target.closest('form[data-confirm]');
-  if (f && !confirm(f.dataset.confirm)) e.preventDefault();
+  if (!f || f.dataset.confirmed) return;
+  e.preventDefault();
+  const by = e.submitter;
+  const danger = !!by?.matches('[data-variant=danger], .btn-danger-text');
+  if (await ask(f.dataset.confirm, { ok: (by?.textContent || '').trim() || 'Confirm', danger })) {
+    f.dataset.confirmed = '1';
+    f.requestSubmit(by);
+  }
 });
 
 document.addEventListener('change', (e) => {

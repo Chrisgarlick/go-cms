@@ -120,3 +120,21 @@ export function uid() {
   const a = new Uint8Array(6); crypto.getRandomValues(a);
   return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
+
+// ask puts a yes/no question in kit's dialog, in place of confirm(). It
+// resolves true when the person confirms. ok names the action ("Move to
+// trash"); danger paints it red. Cancel has the focus.
+export function ask(text, { ok = 'Confirm', danger = false } = {}) {
+  return new Promise((resolve) => {
+    const title = h('h2', { class: 'ask-title', id: `ask-${uid()}` }, text);
+    const cancel = h('button', { type: 'button', class: 'kit-button', autofocus: true }, 'Cancel');
+    const yes = h('button', { type: 'button', class: 'kit-button', 'data-variant': danger ? 'danger' : 'primary' }, ok);
+    const d = h('dialog', { class: 'kit-dialog', 'data-size': 'sm', 'aria-labelledby': title.id, closedby: 'any' },
+      h('div', { class: 'kit-dialog-body' }, title), h('footer', { class: 'kit-dialog-footer' }, cancel, yes));
+    cancel.addEventListener('click', () => d.close(''));
+    yes.addEventListener('click', () => d.close('ok'));
+    d.addEventListener('close', () => { d.remove(); resolve(d.returnValue === 'ok'); }, { once: true });
+    document.body.append(d);
+    d.showModal();
+  });
+}

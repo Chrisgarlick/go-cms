@@ -190,13 +190,13 @@ function mediaField(def, ids, multiple, id, changed) {
           h('div', { class: 'media-chip-name' }, m ? m.filename : 'Unknown file'),
           iconButton('x', 'Remove', () => { cur.splice(i, 1); render(); changed(); }));
       }),
-      (multiple || !cur.length) ? h('button', { type: 'button', class: 'btn', onclick: async () => {
+      (multiple || !cur.length) ? h('button', { type: 'button', class: 'kit-button', onclick: async () => {
         const picked = await pickMedia({ multiple, kind });
         if (!picked.length) return;
         cur = multiple ? [...cur, ...picked.map((p) => p.id).filter((x) => !cur.includes(x))] : [picked[0].id];
         render(); changed();
       } }, icon(kind ? 'image' : 'file'), multiple ? 'Add images' : kind ? 'Choose image' : 'Choose file') : null,
-      !multiple && cur.length ? h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: async () => {
+      !multiple && cur.length ? h('button', { type: 'button', class: 'kit-button', 'data-variant': 'ghost', 'data-size': 'sm', onclick: async () => {
         const picked = await pickMedia({ multiple: false, kind });
         if (picked.length) { cur = [picked[0].id]; render(); changed(); }
       } }, 'Replace') : null,
@@ -215,7 +215,7 @@ function entryField(def, value, id, changed, ctx) {
     fill(box, 
       ...cur.map((e, i) => h('div', { class: 'ref-item' }, icon('file'), h('span', {}, e.label),
         iconButton('x', 'Remove', () => { cur.splice(i, 1); render(); changed(); }))),
-      (multiple || !cur.length) ? h('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
+      (multiple || !cur.length) ? h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: async () => {
         const e = await pickEntry(def.types);
         if (!e || cur.some((c) => c.id === e.id)) return;
         cur = multiple ? [...cur, e] : [e];
@@ -241,7 +241,7 @@ function termField(def, value, id, changed, ctx) {
 function repeaterField(def, value, id, ctx, changed) {
   const rows = [];
   const list = h('div', { class: 'repeater', id });
-  const addBtn = h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { add({}); changed(); } }, icon('plus'), 'Add ' + human(singular(def.label || def.name)).toLowerCase());
+  const addBtn = h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: () => { add({}); changed(); } }, icon('plus'), 'Add ' + human(singular(def.label || def.name)).toLowerCase());
   const renumber = () => rows.forEach((r, i) => { r.title.textContent = `${human(singular(def.label || def.name))} ${i + 1}`; });
   const add = (v) => {
     const obj = renderObject(def.fields, v, ctx);
@@ -286,7 +286,7 @@ function keyValueField(value, id, changed) {
     rows.push(r);
     box.insertBefore(row, btn);
   };
-  const btn = h('button', { type: 'button', class: 'btn btn-sm', onclick: () => add() }, icon('plus'), 'Add row');
+  const btn = h('button', { type: 'button', class: 'kit-button', 'data-size': 'sm', onclick: () => add() }, icon('plus'), 'Add row');
   box.append(btn);
   (Array.isArray(value) ? value : []).forEach((p) => add(p.key, p.value));
   return { id, el: box, get: () => rows.filter((r) => r.key.value.trim()).map((r) => ({ key: r.key.value.trim(), value: r.val.value })) };

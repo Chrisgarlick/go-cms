@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>{{.Title}} · {{.Site}}</title>
+<link rel="stylesheet" href="/admin/assets/kit/kit.css?v={{.Version}}">
 <link rel="stylesheet" href="/admin/assets/admin.css?v={{.Version}}">
 <link rel="icon" href="/admin/assets/favicon.svg">
 </head>
@@ -12,7 +13,7 @@
 <body class="auth">
   <main class="auth-main">
     <div class="auth-card">
-      <p class="auth-site">{{.Site}}</p>
+      <p class="auth-site"><span class="brand-mark" aria-hidden="true">{{printf "%.1s" .Site}}</span>{{.Site}}</p>
       {{template "flash" .}}
       {{template "content" .}}
     </div>
@@ -24,14 +25,14 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <aside class="sidebar" aria-label="Admin navigation">
     <div class="sidebar-head">
-      <a class="brand" href="/admin/"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">{{.Site}}</span></a>
+      <a class="brand" href="/admin/"><span class="brand-mark" aria-hidden="true">{{printf "%.1s" .Site}}</span><span class="brand-name">{{.Site}}</span></a>
       <a class="view-site" href="{{.SiteURL}}/" target="_blank" rel="noopener">View site {{template "icon" "external"}}</a>
     </div>
-    <nav class="nav">
-      <a class="nav-item{{if eq .Section "dashboard"}} is-active{{end}}" href="/admin/">{{template "icon" "home"}}<span>Dashboard</span></a>
+    <nav class="kit-sidebar nav" aria-label="Admin">
+      <ul><li><a href="/admin/"{{if eq .Section "dashboard"}} aria-current="page"{{end}}>{{template "icon" "home"}}<span>Dashboard</span></a></li></ul>
       {{range .Nav}}
-      <p class="nav-label">{{.Label}}</p>
-      {{range .Items}}<a class="nav-item{{if .Active}} is-active{{end}}" href="{{.URL}}"{{if .Active}} aria-current="page"{{end}}>{{template "icon" .Icon}}<span>{{.Label}}</span></a>{{end}}
+      <p class="kit-sidebar-label">{{.Label}}</p>
+      <ul>{{range .Items}}<li><a href="{{.URL}}"{{if .Active}} aria-current="page"{{end}}>{{template "icon" .Icon}}<span>{{.Label}}</span></a></li>{{end}}</ul>
       {{end}}
     </nav>
     {{with .Session}}
@@ -48,6 +49,7 @@
       {{template "content" .}}
     </main>
   </div>
+  <script src="/admin/assets/kit/kit.js?v={{.Version}}" type="module"></script>
   <script src="/admin/assets/admin.js?v={{.Version}}" type="module"></script>
   {{block "scripts" .}}{{end}}
 </body>

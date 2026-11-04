@@ -3,7 +3,7 @@
 <header class="page-head">
   <div><p class="crumbs"><a href="/admin/media/">Media</a></p><h1 class="truncate">{{$m.Filename}}</h1>
   <p class="muted">{{$m.Mime}} · {{kb $m.Size}}{{if $m.Width}} · {{$m.Width}} × {{$m.Height}}{{end}} · uploaded {{ago .Data.Raw.CreatedAt}}</p></div>
-  {{if $m.URL}}<a class="btn" href="{{$m.URL}}" target="_blank" rel="noopener">Open file {{template "icon" "external"}}</a>{{end}}
+  {{if $m.URL}}<a class="kit-button" href="{{$m.URL}}" target="_blank" rel="noopener">Open file {{template "icon" "external"}}</a>{{end}}
 </header>
 <div class="grid-media-edit">
   <div class="panel media-preview">
@@ -29,7 +29,7 @@
     <label class="field"><span class="label">Title</span><input name="title" value="{{$m.Title}}" maxlength="1000"></label>
     <label class="field"><span class="label">Caption</span><textarea name="caption" rows="2" maxlength="1000">{{$m.Caption}}</textarea></label>
     <label class="field"><span class="label">Credit</span><input name="credit" value="{{$m.Credit}}" maxlength="1000"></label>
-    <div class="row"><button class="btn btn-primary" type="submit">Save</button></div>
+    <div class="row"><button class="kit-button" data-variant="primary" type="submit">Save</button></div>
   </form>
 </div>
 <section class="panel">
@@ -39,6 +39,6 @@
 </section>
 <form method="post" action="/admin/media/{{$m.ID}}/delete" class="danger-zone" data-confirm="Delete this file?{{if .Data.Usage}} It is used by published content.{{end}}">
   <input type="hidden" name="csrf" value="{{.CSRF}}">{{if .Data.Usage}}<input type="hidden" name="force" value="1">{{end}}
-  <button class="btn btn-danger" type="submit">Delete file</button>
+  <button class="kit-button" data-variant="danger" type="submit">Delete file</button>
 </form>
 {{end}}

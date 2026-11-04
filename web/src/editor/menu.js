@@ -9,7 +9,7 @@ export function mountMenuEditor() {
 
   const draw = () => {
     fill(root, items.length ? tree(items, 0) : h('p', { class: 'muted' }, 'This menu is empty.'),
-      h('div', { class: 'row', style: null }, h('button', { type: 'button', class: 'btn', onclick: () => { items.push(newItem()); draw(); } }, icon('plus'), 'Add item')));
+      h('div', { class: 'row', style: null }, h('button', { type: 'button', class: 'kit-button', onclick: () => { items.push(newItem()); draw(); } }, icon('plus'), 'Add item')));
   };
   const newItem = () => ({ id: uid(), type: 'url', label: '', url: '/', children: [] });
 

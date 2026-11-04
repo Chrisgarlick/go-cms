@@ -6,7 +6,7 @@
   <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="next" value="{{.Data.Next}}">
   <label class="field"><span class="label">Recovery code</span>
     <input name="recovery" autocomplete="one-time-code" placeholder="xxxxx-xxxxx" required autofocus spellcheck="false"></label>
-  <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+  <button class="kit-button btn-block" data-variant="primary" type="submit">Sign in</button>
 </form>
 <p class="auth-alt"><a href="/admin/login/2fa">Use your authenticator app instead</a></p>
 {{else}}
@@ -15,10 +15,10 @@
   <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="next" value="{{.Data.Next}}">
   <label class="field"><span class="label">Code</span>
     <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" class="code-input" required autofocus></label>
-  <button class="btn btn-primary btn-block" type="submit">Verify</button>
+  <button class="kit-button btn-block" data-variant="primary" type="submit">Verify</button>
 </form>
 {{if .Data.Passkeys}}<p class="or"><span>or</span></p>
-<button type="button" class="btn btn-block" data-passkey-login data-next="{{.Data.Next}}">{{template "icon" "key"}} Use a passkey</button>
+<button type="button" class="kit-button btn-block" data-passkey-login data-next="{{.Data.Next}}">{{template "icon" "key"}} Use a passkey</button>
 <p class="error-text" data-passkey-error role="alert"></p>
 <script src="/admin/assets/admin.js?v={{.Version}}" type="module"></script>{{end}}
 <p class="auth-alt"><a href="/admin/login/2fa?recovery=1">Use a recovery code</a></p>

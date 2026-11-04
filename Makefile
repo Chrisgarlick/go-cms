@@ -4,7 +4,7 @@ REPO     ?= $(shell git remote get-url origin 2>/dev/null | sed -E 's,(git@githu
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS  := -s -w -X cms/internal/version.Version=$(VERSION) -X cms/internal/version.Commit=$(shell git rev-parse HEAD 2>/dev/null) -X cms/internal/version.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ) $(if $(REPO),-X cms/internal/version.Repo=$(REPO))
 
-.PHONY: build dev test test-short lint generate assets check-generated fuzz e2e starters budget clean
+.PHONY: kit build dev test test-short lint generate assets check-generated fuzz e2e starters budget clean
 
 build: ## Static, stripped binary
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o bin/cms ./cmd/cms
@@ -51,3 +51,16 @@ budget: build ## Memory and latency budgets (needs k6)
 
 clean:
 	rm -rf bin dist .dev-site
+
+# kit (~/dev/kit), the admin's component library, vendored into web/src/kit
+# with its fonts and committed (web/build.mjs copies it to dist). Bump
+# KIT_REV, check out that commit in $(KIT), then `make kit assets`.
+KIT     ?= $(HOME)/dev/kit
+KIT_REV := 2d09a69
+KIT_JS  := -js kit=dialog
+KIT_CSS := button,badge,alert,data-table,stat-tile,segmented-control,sidebar
+
+kit:
+	@test "$$(git -C $(KIT) rev-parse --short HEAD)" = "$(KIT_REV)" || (echo "check out kit $(KIT_REV) in $(KIT) first" && exit 1)
+	rm -rf web/src/kit
+	cd $(KIT) && $(GO) run ./cmd/kit dist -out $(CURDIR)/web/src/kit -fonts $(KIT_JS) -css $(KIT_CSS)

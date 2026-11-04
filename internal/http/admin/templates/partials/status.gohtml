@@ -1,1 +1,1 @@
-{{define "status"}}<span class="badge badge-{{.}}">{{if eq . "pending"}}Unpublished changes{{else}}{{title .}}{{end}}</span>{{end}}
+{{define "status"}}<span class="kit-badge" data-tone="{{tone .}}"><span class="kit-dot" aria-hidden="true"></span>{{if eq . "pending"}}Unpublished changes{{else}}{{title .}}{{end}}</span>{{end}}

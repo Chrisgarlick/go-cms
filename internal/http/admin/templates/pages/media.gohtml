@@ -1,15 +1,15 @@
 {{define "content"}}
 <header class="page-head">
   <div><h1>Media</h1><p class="muted">{{.Data.Total}} files · up to {{.Data.MaxMB}} MB each</p></div>
-  <label class="btn btn-primary">{{template "icon" "upload"}} Upload<input type="file" multiple hidden data-upload data-csrf="{{.CSRF}}"></label>
+  <label class="kit-button" data-variant="primary">{{template "icon" "upload"}} Upload<input type="file" multiple hidden data-upload data-csrf="{{.CSRF}}"></label>
 </header>
 <div class="toolbar">
-  <nav class="tabs" aria-label="Filter by type">
-    <a class="tab{{if and (eq .Data.Kind "") (not .Data.Unused)}} is-active{{end}}" href="?">All</a>
-    <a class="tab{{if eq .Data.Kind "image/"}} is-active{{end}}" href="?kind=image/">Images</a>
-    <a class="tab{{if eq .Data.Kind "application/"}} is-active{{end}}" href="?kind=application/">Documents</a>
-    <a class="tab{{if eq .Data.Kind "video/"}} is-active{{end}}" href="?kind=video/">Video</a>
-    <a class="tab{{if .Data.Unused}} is-active{{end}}" href="?unused=1">Unused</a>
+  <nav class="kit-segmented" aria-label="Filter by type">
+    <a {{if and (eq .Data.Kind "") (not .Data.Unused)}}aria-current="page" {{end}}href="?">All</a>
+    <a {{if eq .Data.Kind "image/"}}aria-current="page" {{end}}href="?kind=image/">Images</a>
+    <a {{if eq .Data.Kind "application/"}}aria-current="page" {{end}}href="?kind=application/">Documents</a>
+    <a {{if eq .Data.Kind "video/"}}aria-current="page" {{end}}href="?kind=video/">Video</a>
+    <a {{if .Data.Unused}}aria-current="page" {{end}}href="?unused=1">Unused</a>
   </nav>
   <form class="search" role="search"><input type="hidden" name="kind" value="{{.Data.Kind}}"><label class="visually-hidden" for="q">Search media</label>
     <input id="q" type="search" name="q" value="{{.Data.Query}}" placeholder="Search names and alt text…"></form>

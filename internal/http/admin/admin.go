@@ -85,6 +85,7 @@ func (h *Handler) loadTemplates() {
 		"add":       func(a, b int) int { return a + b },
 		"sub":       func(a, b int) int { return a - b },
 		"title":     func(s string) string { return fields.Humanize(s) },
+		"tone":      statusTone,
 		"lower":     strings.ToLower,
 		"eq2":       func(a, b any) bool { return fmt.Sprint(a) == fmt.Sprint(b) },
 		"kb":        func(n int64) string { return humanBytes(n) },
@@ -552,4 +553,19 @@ func (h *Handler) assetsHandler() http.Handler {
 		hd.Set("Content-Length", strconv.Itoa(len(body)))
 		_, _ = w.Write(body)
 	})
+}
+
+// statusTone is a status badge's kit tone (data-tone on .kit-badge).
+func statusTone(status string) string {
+	switch status {
+	case "published", "active":
+		return "good"
+	case "scheduled":
+		return "info"
+	case "pending", "warn":
+		return "warn"
+	case "trashed", "disabled":
+		return "bad"
+	}
+	return "neutral"
 }
