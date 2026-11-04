@@ -65,8 +65,13 @@ if [[ $mode == core ]]; then
   new_bin=$target/cms
   ln -sfn "$target" "$CMS_HOME/$idle"
 else
-  new_bin=$CMS_HOME/$active/cms
-  ln -sfn "$CMS_HOME/$active" "$CMS_HOME/$idle"
+  # A new site bundle keeps the core release: point the idle colour at the
+  # release folder itself. Linking it to the active colour's link made a
+  # loop on the second site deploy in a row (green -> blue -> green).
+  core=$(readlink -f "$CMS_HOME/$active")
+  [[ -x $core/cms ]] || die "the active colour ($active) doesn't resolve to a release with cms in it"
+  new_bin=$core/cms
+  ln -sfn "$core" "$CMS_HOME/$idle"
 fi
 # One-off commands run as cms, like the services, and get the key the same
 # way (LoadCredential): the key file itself is root-only (0400), so a plain
