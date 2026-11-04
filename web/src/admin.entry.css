@@ -1,0 +1,3 @@
+/* The admin's one stylesheet: kit, then the admin's own. */
+@import "./kit/kit.css";
+@import "./admin.css";

@@ -52,15 +52,14 @@ budget: build ## Memory and latency budgets (needs k6)
 clean:
 	rm -rf bin dist .dev-site
 
-# kit (~/dev/kit), the admin's component library, vendored into web/src/kit
-# with its fonts and committed (web/build.mjs copies it to dist). Bump
+# kit (~/dev/kit), the admin's component library: its CSS, vendored into
+# web/src/kit and committed, and built into admin.css (web/build.mjs copies it to dist). Bump
 # KIT_REV, check out that commit in $(KIT), then `make kit assets`.
 KIT     ?= $(HOME)/dev/kit
-KIT_REV := 2d09a69
-KIT_JS  := -js kit=dialog
+KIT_REV := ee68596
 KIT_CSS := button,badge,alert,data-table,stat-tile,segmented-control,sidebar
 
 kit:
 	@test "$$(git -C $(KIT) rev-parse --short HEAD)" = "$(KIT_REV)" || (echo "check out kit $(KIT_REV) in $(KIT) first" && exit 1)
 	rm -rf web/src/kit
-	cd $(KIT) && $(GO) run ./cmd/kit dist -out $(CURDIR)/web/src/kit -fonts $(KIT_JS) -css $(KIT_CSS)
+	cd $(KIT) && $(GO) run ./cmd/kit dist -out $(CURDIR)/web/src/kit -no-js -css dialog,$(KIT_CSS)

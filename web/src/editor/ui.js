@@ -80,20 +80,30 @@ export async function api(method, url, body) {
   return data;
 }
 
+// modal opens a native <dialog> in kit's dialog style: the page behind is
+// inert, focus stays inside, and Escape or a press on the backdrop closes it.
 export function modal(title, body, foot) {
-  const close = () => { box.remove(); document.removeEventListener('keydown', onKey); last?.focus(); };
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
   const last = document.activeElement;
-  const box = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
-    h('div', { class: 'modal-box' },
-      h('div', { class: 'modal-head' }, h('h2', {}, title), iconButton('x', 'Close', () => close())),
-      h('div', { class: 'modal-body' }, body),
-      foot ? h('div', { class: 'modal-foot' }, foot) : null));
-  box.addEventListener('mousedown', (e) => { if (e.target === box) close(); });
-  document.addEventListener('keydown', onKey);
-  document.body.append(box);
-  setTimeout(() => (box.querySelector('input,button.picker-item,button') || box).focus(), 0);
-  return { close, el: box };
+  const id = `modal-${uid()}`;
+  const d = h('dialog', { class: 'kit-dialog modal', 'data-size': 'lg', 'aria-labelledby': id },
+    h('header', { class: 'kit-dialog-header' }, h('h2', { id }, title), iconButton('x', 'Close', () => close())),
+    h('div', { class: 'kit-dialog-body' }, body),
+    foot ? h('footer', { class: 'kit-dialog-footer' }, foot) : null);
+  const close = () => { if (d.open) d.close(); };
+  backdropCloses(d);
+  d.addEventListener('close', () => { d.remove(); last?.focus(); }, { once: true });
+  document.body.append(d);
+  d.showModal();
+  (d.querySelector('.kit-dialog-body :is(input, button)') || d).focus();
+  return { close, el: d };
+}
+
+// A press that starts and ends on the backdrop (outside the dialog's box) closes it.
+function backdropCloses(d) {
+  let down = false;
+  const outside = (e) => { const r = d.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; };
+  d.addEventListener('pointerdown', (e) => { down = e.target === d && outside(e); });
+  d.addEventListener('click', (e) => { if (down && e.target === d && outside(e)) d.close(''); down = false; });
 }
 
 export function debounce(fn, ms) {
@@ -129,10 +139,11 @@ export function ask(text, { ok = 'Confirm', danger = false } = {}) {
     const title = h('h2', { class: 'ask-title', id: `ask-${uid()}` }, text);
     const cancel = h('button', { type: 'button', class: 'kit-button', autofocus: true }, 'Cancel');
     const yes = h('button', { type: 'button', class: 'kit-button', 'data-variant': danger ? 'danger' : 'primary' }, ok);
-    const d = h('dialog', { class: 'kit-dialog', 'data-size': 'sm', 'aria-labelledby': title.id, closedby: 'any' },
+    const d = h('dialog', { class: 'kit-dialog', 'data-size': 'sm', 'aria-labelledby': title.id },
       h('div', { class: 'kit-dialog-body' }, title), h('footer', { class: 'kit-dialog-footer' }, cancel, yes));
     cancel.addEventListener('click', () => d.close(''));
     yes.addEventListener('click', () => d.close('ok'));
+    backdropCloses(d);
     d.addEventListener('close', () => { d.remove(); resolve(d.returnValue === 'ok'); }, { once: true });
     document.body.append(d);
     d.showModal();

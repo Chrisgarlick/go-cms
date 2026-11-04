@@ -1,16 +1,16 @@
 // Builds web/dist from web/src. Output is committed so `go build` needs no Node.
 import * as esbuild from 'esbuild';
-import { copyFileSync, cpSync, mkdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, rmSync } from 'node:fs';
 
 const watch = process.argv.includes('--watch');
 mkdirSync('dist', { recursive: true });
-for (const f of ['admin.css', 'icons.svg', 'favicon.svg']) copyFileSync(`src/${f}`, `dist/${f}`);
-// kit, vendored by `make kit`: CSS, fonts and the bundles, as built.
+for (const f of ['icons.svg', 'favicon.svg']) copyFileSync(`src/${f}`, `dist/${f}`);
 rmSync('dist/kit', { recursive: true, force: true });
-cpSync('src/kit', 'dist/kit', { recursive: true });
 
 const opts = {
-  entryPoints: { admin: 'src/admin.js', editor: 'src/editor/main.js' },
+  // admin.css is kit's CSS (src/kit, vendored by `make kit`) and the
+  // admin's own, as one minified stylesheet.
+  entryPoints: [{ in: 'src/admin.js', out: 'admin' }, { in: 'src/editor/main.js', out: 'editor' }, { in: 'src/admin.entry.css', out: 'admin' }],
   bundle: true,
   format: 'esm',
   minify: !watch,
