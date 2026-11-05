@@ -119,7 +119,7 @@ type BlockPolicy struct {
 }
 
 type Sort struct {
-	Field string `yaml:"field" json:"field"` // published_at | title | menu_order | updated_at
+	Field string `yaml:"field" json:"field"` // published_at | title | menu_order | updated_at, or a date/datetime field (admin list)
 	Order string `yaml:"order" json:"order"` // asc | desc
 }
 

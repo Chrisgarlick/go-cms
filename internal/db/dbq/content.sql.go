@@ -933,20 +933,23 @@ ORDER BY
   CASE WHEN $7::text = 'title' THEN lower(e.draft_title) END ASC,
   CASE WHEN $7::text = 'menu_order' THEN e.menu_order END ASC,
   CASE WHEN $7::text = 'published_at' THEN e.published_at END DESC NULLS LAST,
+  CASE WHEN $7::text = 'field_asc' THEN e.draft_fields->>$8::text END ASC NULLS LAST,
+  CASE WHEN $7::text = 'field_desc' THEN e.draft_fields->>$8::text END DESC NULLS LAST,
   e.updated_at DESC
-LIMIT $9 OFFSET $8
+LIMIT $10 OFFSET $9
 `
 
 type ListEntriesParams struct {
-	Type     string
-	Status   *string
-	Q        *string
-	AuthorID *uuid.UUID
-	ParentID *uuid.UUID
-	Fields   []byte
-	Sort     string
-	Off      int32
-	Lim      int32
+	Type      string
+	Status    *string
+	Q         *string
+	AuthorID  *uuid.UUID
+	ParentID  *uuid.UUID
+	Fields    []byte
+	Sort      string
+	SortField string
+	Off       int32
+	Lim       int32
 }
 
 type ListEntriesRow struct {
@@ -981,6 +984,7 @@ func (q *Queries) ListEntries(ctx context.Context, arg ListEntriesParams) ([]Lis
 		arg.ParentID,
 		arg.Fields,
 		arg.Sort,
+		arg.SortField,
 		arg.Off,
 		arg.Lim,
 	)
