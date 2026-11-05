@@ -180,6 +180,8 @@ ORDER BY
   CASE WHEN @sort::text = 'title' THEN lower(e.draft_title) END ASC,
   CASE WHEN @sort::text = 'menu_order' THEN e.menu_order END ASC,
   CASE WHEN @sort::text = 'published_at' THEN e.published_at END DESC NULLS LAST,
+  CASE WHEN @sort::text = 'field_asc' THEN e.draft_fields->>sqlc.arg(sort_field)::text END ASC NULLS LAST,
+  CASE WHEN @sort::text = 'field_desc' THEN e.draft_fields->>sqlc.arg(sort_field)::text END DESC NULLS LAST,
   e.updated_at DESC
 LIMIT @lim OFFSET @off;
 

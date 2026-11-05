@@ -1157,8 +1157,11 @@ type ListFilter struct {
 	Query    string
 	AuthorID *uuid.UUID
 	Sort     string
-	Limit    int32
-	Offset   int32
+	// SortField is the custom field Sort "field_asc" or "field_desc"
+	// orders by.
+	SortField string
+	Limit     int32
+	Offset    int32
 	// Fields keeps entries whose draft fields have all these values.
 	Fields map[string]string
 }
@@ -1172,7 +1175,7 @@ func (s *Service) List(ctx context.Context, f ListFilter) ([]dbq.ListEntriesRow,
 	}
 	p := dbq.ListEntriesParams{
 		Type: f.Type, Status: nilIfEmpty(f.Status), Q: nilIfEmpty(f.Query), AuthorID: f.AuthorID,
-		Sort: f.Sort, Lim: f.Limit, Off: f.Offset,
+		Sort: f.Sort, SortField: f.SortField, Lim: f.Limit, Off: f.Offset,
 	}
 	if len(f.Fields) > 0 {
 		p.Fields, _ = json.Marshal(f.Fields)

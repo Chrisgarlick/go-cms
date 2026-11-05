@@ -141,8 +141,9 @@ func fieldLabel(f *fields.Field) string {
 }
 
 // listCell is a custom field's value as list text: a select's option
-// label, Yes for a true boolean, a list joined with commas.
-func listCell(row dbq.ListEntriesRow, f *fields.Field) string {
+// label, Yes for a true boolean, a list joined with commas, a date or
+// date and time in the site's time zone.
+func (h *Handler) listCell(row dbq.ListEntriesRow, f *fields.Field) string {
 	var m map[string]any
 	if json.Unmarshal(row.DraftFields, &m) != nil {
 		return ""
@@ -165,6 +166,19 @@ func listCell(row dbq.ListEntriesRow, f *fields.Field) string {
 		}
 		return ""
 	case string:
+		switch f.Type {
+		case fields.Date:
+			if t, err := time.Parse("2006-01-02", v); err == nil {
+				return t.Format("Mon 2 Jan 2006")
+			}
+		case fields.DateTime:
+			if t, err := time.Parse(time.RFC3339, v); err == nil {
+				if loc, err := time.LoadLocation(h.a.Site().Config.Timezone); err == nil {
+					t = t.In(loc)
+				}
+				return t.Format("Mon 2 Jan 2006, 15:04")
+			}
+		}
 		return label(v)
 	case []any:
 		parts := make([]string, 0, len(v))
@@ -197,8 +211,11 @@ func (h *Handler) contentList(w http.ResponseWriter, r *http.Request) {
 		sort = "menu_order"
 	} else if ct.Sort.Field == "title" {
 		sort = "title"
+	} else if f := ct.Field(ct.Sort.Field); f != nil && (f.Type == fields.Date || f.Type == fields.DateTime) {
+		// Dates are stored as ISO strings, so they sort as text.
+		sort = "field_" + ct.Sort.Order
 	}
-	lf := content.ListFilter{Type: ct.Name, Status: status, Query: q, Sort: sort,
+	lf := content.ListFilter{Type: ct.Name, Status: status, Query: q, Sort: sort, SortField: ct.Sort.Field,
 		Limit: per, Offset: int32((page - 1) * per)}
 	base := url.Values{"status": {status}, "q": {q}}
 	var filters []listFilter

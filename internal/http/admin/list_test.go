@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"cms/internal/app"
 	"cms/internal/content"
@@ -89,5 +90,58 @@ fields:
 		if st, _ := newBrowser(t, srv).get(p); st != 404 {
 			t.Errorf("GET %s = %d, want 404 for a private type", p, st)
 		}
+	}
+}
+
+// A type sorted by a datetime field lists by that field, and shows it in
+// the site's time zone.
+func TestListSortsByDateField(t *testing.T) {
+	a, srv := setup(t)
+	ct := `name: social
+label: { singular: Social post, plural: Social }
+public: false
+supports: [title]
+sort: { field: goes_out, order: desc }
+list_columns: [title, goes_out]
+fields:
+  - { name: goes_out, type: datetime }
+`
+	if err := os.WriteFile(filepath.Join(a.Cfg.Paths.Site, "content-types", "social.yaml"), []byte(ct), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.LoadBundle(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Site().Apply(context.Background(), a.DB.Q); err != nil {
+		t.Fatal(err)
+	}
+	sys := app.SystemCtx(context.Background(), "test")
+	// Saved in this order, so updated_at alone would list them the other way round.
+	for _, it := range []struct{ title, when string }{{"Tuesday reel", "2026-11-10T08:00:00Z"}, {"Monday carousel", "2026-11-09T18:30:00Z"}, {"No date yet", ""}} {
+		e, err := a.Content.Create(sys, content.CreateInput{Type: "social", Title: it.title})
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := map[string]any{}
+		if it.when != "" {
+			m["goes_out"] = it.when
+		}
+		f, _ := json.Marshal(m)
+		if _, err := a.Content.Save(sys, content.SaveInput{ID: e.ID, ExpectedVersion: e.Version, Title: it.title, Slug: e.Slug, Fields: f}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	b := login(t, a, srv, "editor@example.com", rbac.Editor)
+	_, body := b.get("/admin/content/social/")
+	tue, mon, none := strings.Index(body, "Tuesday reel"), strings.Index(body, "Monday carousel"), strings.Index(body, "No date yet")
+	if tue < 0 || mon < 0 || none < 0 || !(tue < mon && mon < none) {
+		t.Errorf("want Tuesday, Monday, then the undated post; got positions %d, %d, %d", tue, mon, none)
+	}
+	tz := a.Site().Config.Timezone
+	loc, _ := time.LoadLocation(tz)
+	want := time.Date(2026, 11, 10, 8, 0, 0, 0, time.UTC).In(loc).Format("Mon 2 Jan 2006, 15:04")
+	if !strings.Contains(body, want) {
+		t.Errorf("list is missing the date %q (site time zone %s)", want, tz)
 	}
 }

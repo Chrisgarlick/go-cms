@@ -91,7 +91,7 @@ func (h *Handler) loadTemplates() {
 		"kb":        func(n int64) string { return humanBytes(n) },
 		"str":       func(v any) string { return fmt.Sprint(v) },
 		"hasPrefix": strings.HasPrefix,
-		"listCell":  listCell,
+		"listCell":  h.listCell,
 		// withQuery is base (an encoded query string) with each key set to
 		// its value, or removed when the value is empty, as "?…" or "?".
 		"withQuery": func(base string, kv ...string) template.URL {
