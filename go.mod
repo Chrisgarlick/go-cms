@@ -5,7 +5,7 @@ go 1.26.10
 tool github.com/sqlc-dev/sqlc/cmd/sqlc
 
 require (
-	github.com/andybalholm/brotli v1.2.6
+	github.com/andybalholm/brotli v1.2.7
 	github.com/fergusstrange/embedded-postgres v1.34.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/google/uuid v1.6.0
