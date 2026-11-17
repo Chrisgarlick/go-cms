@@ -55,7 +55,7 @@ clean:
 # kit (~/dev/kit), the admin's component library: its CSS, vendored into
 # web/src/kit and committed, and built into admin.css (web/build.mjs copies it to dist). Bump
 # KIT_REV, check out that commit in $(KIT), then `make kit assets`.
-KIT     ?= $(HOME)/dev/kit
+KIT     ?= $(abspath $(CURDIR)/../kit)
 KIT_REV := ee68596
 KIT_CSS := button,badge,alert,data-table,stat-tile,segmented-control,sidebar
 
