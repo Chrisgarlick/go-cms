@@ -41,6 +41,8 @@ Run `cms check` before you push. It validates the schema, templates and fixtures
 
 ## Working on the core (this repo)
 
+On a fresh clone, run `bin/setup` first: it installs the npm packages, builds `bin/cms` and links it into `~/go/bin`.
+
 You need Go 1.26 and Node 22 (Node is only used for the admin assets and the E2E tests).
 
 ```sh

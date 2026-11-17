@@ -1,4 +1,5 @@
-/bin/
+/bin/*
+!/bin/setup
 /dist/
 /.dev-site/
 node_modules/

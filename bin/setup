@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Gets a fresh clone ready to work on: the admin's and the E2E tests' npm
+# packages, bin/cms, and `cms` on your PATH (a link in ~/go/bin to bin/cms,
+# which kritano's docs and site use). Safe to run again. Starts nothing and
+# deploys nothing.
+#
+# kit's CSS is vendored into web/src/kit and committed, so `make kit` is only
+# for bumping KIT_REV, not for setup.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "bin/setup: $1 not found. $2" >&2; exit 1; }; }
+need go "Install Go 1.26 or newer: brew install go"
+need npm "Install Node 22 (for the admin assets and E2E tests): brew install node@22"
+
+# npm ci only when package-lock.json has changed since the last install.
+for dir in web e2e; do
+  if [ ! -d "$dir/node_modules" ] || [ "$dir/package-lock.json" -nt "$dir/node_modules/.package-lock.json" ]; then
+    echo "== npm packages in $dir/"
+    (cd "$dir" && npm ci --no-audit --no-fund)
+  fi
+done
+
+echo "== bin/cms"
+make build
+
+gobin="$(go env GOBIN)"
+[ -n "$gobin" ] || gobin="$(go env GOPATH)/bin"
+mkdir -p "$gobin"
+ln -sfn "$PWD/bin/cms" "$gobin/cms"
+echo "Linked $gobin/cms to bin/cms"
+case ":$PATH:" in *":$gobin:"*) ;; *) echo "Add $gobin to your PATH to run cms from anywhere." ;; esac
+
+# Playwright's browsers are a big download, so they aren't fetched here.
+# make e2e needs Chromium: cd e2e && npx playwright install chromium
+ls -d "$HOME/Library/Caches/ms-playwright"/chromium-* >/dev/null 2>&1 ||
+  echo "No Playwright browsers yet: cd e2e && npx playwright install chromium (before make e2e)"
+
+echo
+echo "Ready. Next: make dev (the blog starter at http://localhost:8080), make test."
